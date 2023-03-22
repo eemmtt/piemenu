@@ -1,7 +1,8 @@
 #Commands used to control the PieMenu
 -
-deck(pedal_right:down):
-    user.pimenu_select_screen(1)
-    user.pimenu_activate()
-    
-deck(pedal_right:up): user.pimenu_call_option()
+#user.piemenu_launch(screen_number:int = 1, menu_layer:int = 0)
+deck(pedal_right:down): user.piemenu_launch(1,0)
+deck(pedal_right:up): user.piemenu_call_and_close()
+
+deck(button_5:down): user.piemenu_launch(1,1)
+deck(button_5:up): user.piemenu_call_and_close()
