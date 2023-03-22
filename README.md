@@ -1,16 +1,10 @@
 # PieMenu for Talon  
-PieMenu is a contextual menu for use with a mouse (or Talon's "Control Mouse"), inspired by Blender's useful Pie Menus.  
+PieMenu is a contextual menu for use with a mouse.  
 PieMenu has only been tested on Windows 10 with Talon Rust, on a single monitor.  
-PieMenu is a WIP and was originally modified from Timo's mouse_grid.py, see:  
-https://github.com/timo/talon_scripts 
-  
-Talon:  
-https://talonvoice.com/  
-https://talonvoice.slack.com/
 
 ## Installation  
-Clone the repo to [talon home]\user  
-[Talon Home] can be found by navigating to Talon's Options>Scripting>"Talon Home"
+Clone the repo to "[Talon Home]/user"  
+[Talon Home] can be found by navigating to Scripting>"Talon Home" in Talon.
 
 ## Using Pie Menu
 Edit piemenu.talon to use your desired hotkeys.  
@@ -34,4 +28,14 @@ Release the hotkey to trigger the indicated action.
 ```
     deck(pedal_right:down): user.piemenu_launch(1,0) 
     where: 
-    piemenu_launch(screen_number: int, layer_number: int)
+    piemenu_launch(screen_number: int, layer_number: int, toggle_mode: bool = False)
+```
+## Acknowledgements  
+PieMenu was inspired by Blender's useful custom Pie Menus.
+
+PieMenu was originally modified from Timo's mouse_grid.py, see:  
+https://github.com/timo/talon_scripts 
+  
+I ♥ Talon:  
+https://talonvoice.com/  
+https://talonvoice.slack.com/
