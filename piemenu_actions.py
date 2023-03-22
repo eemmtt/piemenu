@@ -18,8 +18,9 @@ class PieMenuActions:
         pm.close()
         pm.call_selection()
         
-    def piemenu_launch(screen: int, layer: int = 0):
+    def piemenu_launch(screen: int, layer: int = 0, toggle: int = 0):
         """Launches Pie Menu"""
+        #toggle_mode = True if toggle == 1 else False
         pm.setup(screen_num=screen - 1, layer=layer)
         if not pm.mcanvas:
             pm.setup(layer=layer)
