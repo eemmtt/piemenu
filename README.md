@@ -1,41 +1,78 @@
 # PieMenu for Talon  
 PieMenu is a contextual menu for use with a mouse.  
-PieMenu has only been tested on Windows 10 with Talon Rust, on a single monitor.  
+At this time, PieMenu has only been tested on Windows 10 with Talon Rust, on a single monitor.  
 
 ## Installation  
-Clone the repo to "[Talon Home]/user"  
+Clone (download) the repo to "[Talon Home]/user"  
 [Talon Home] can be found by navigating to Scripting>"Talon Home" in Talon.
 
 ## Using Pie Menu
 Edit piemenu.talon to use your desired hotkeys.  
-> By default, Pie Menu is triggered using the Right Streamdeck Foot Pedal  
 
-Press and hold the hotkey to display the Pie Menu at your cursor.  
-Move your cursor outward to the 'slice' of the Pie Menu with your desired action.  
-> Slices extend outwards, beyond the drawn Pie Menu to the active screen's limits.  
+PieMenu has two modes of interaction:
+1. Press and Hold, Release
+2. Toggle
 
-Release the hotkey to trigger the indicated action.  
+### Press and hold, Release  
+1. Press and hold the hotkey to display the Pie Menu at your cursor location.  
+2. Move your cursor outward to the 'slice' of the Pie Menu with your desired action.  
+    > Slices extend outwards, beyond the drawn Pie Menu to the active screen's limits.  
+
+3. Release the hotkey to trigger the indicated action and close the Pie Menu.
+
+### Toggle
+1. Tap the hotkey to display the Pie Menu at your cursor location.
+2. Tap the hotkey again to trigger the action and close the Pie Menu.
 
 ## Customizing Pie Menu
+Pie Menus are displayed based on the active application and the triggered Pie Menu layer.  
+A Pie Menu's appearence and actions are defined in the class SettingsAndFunctions located in piemenu_classes.py  
+Custom Pie Menus are defined in their own class inheriting from SettingsAndFunctions.
 
-1. Add the settings and functions for your custom Pie Menu to a class inheriting from 'App_Specific_Vars' in 'piemenu_classes.py'
-    >At the time of writing, functions called by PieMenu should take no parameters (other than self)
-2. Add your custom class to the dict 'piemenu_variations' located at the bottom of 'piemenu_classes.py' 
-- key = The name of the app where your Pie Menu should display (the result of talon.ui.active_app().name)  
-- value = [Your_Menu_Layer_0(), Your_Menu_Layer_1,..,Your_Menu_Layer_N]  
-    >If you want a custom menu without an associated app, add it to the list of values under "_default"  
-3. Call the layer from your .talon file:  
+### Create a Custom Pie Menu:
+
+1. Create a class for your custom pie menu in piemenu_classes.py inheriting from SettingsAndFunctions:
 ```
-    deck(pedal_right:down): user.piemenu_launch(1,0) 
-    where: 
-    piemenu_launch(screen_number: int, layer_number: int, toggle_mode: bool = False)
+class CustomPieMenu(SettingsAndFunctions):
+    def __init__(self):
+        super().__init__()
+        #settings you want to overwrite from SettingsAndFunctions
+        self.bg_color = "ff00ffff" #hexadecimal RR-GG-BB-AA
+        
+        #the options you want to appear on your Custom PieMenu
+        #self.options takes an array of tuples (string, function object)
+        self.options = [
+                ("New Tab",             self.f_shout("def")),
+                ("Scroll Up",           self.f_scroll(-400)),
+                ("Close Tab",           self.f_shout("def")),
+                ("Back",                self.f_shout("def")),
+                ("Scroll Down",         self.f_scroll(400)),
+                ("Focus Search Bar",    self.f_shout("def")),
+                ]
 ```
-## Acknowledgements  
-PieMenu was inspired by Blender's useful custom Pie Menus.
+2. Add your custom class to the dictionary 'piemenu_variations' located at the bottom of piemenu_classes.py. The key must match the result of ui.active_app().name to trigger within an active app. If you want your PieMenu to trigger when the active app is unspecified, add it to _default.
+```
+piemenu_variations = {
+    "_default": [SettingsAndFunctions()],
+    "AppName": [CustomPieMenu_Layer0(), CustomPieMenu_Layer1()],
+}
+```
+  
+
+3. In your .talon file, the 2nd paramenter in user.piemenu_launch and user.piemenu_toggle is the layer number. In the following example, pedal_right triggers the 0th layer in the active context, ctrl-alt-a triggers the 1st layer. 
+```
+    deck(pedal_right:down): user.piemenu_launch(1,0)
+    key(ctrl-alt-a): user.piemenu_toggle(1,1)
+```
+
+
+## Acknowledgement
+PieMenu was inspired by Blender's useful custom Pie Menus.  
+> https://github.com/scorpion81/blender-addons/blob/master/ui_pie_menus_official.py
 
 PieMenu was originally modified from Timo's mouse_grid.py, see:  
-https://github.com/timo/talon_scripts 
-  
+>https://github.com/timo/talon_scripts   
+
 I ♥ Talon:  
-https://talonvoice.com/  
-https://talonvoice.slack.com/
+>https://talonvoice.com/  
+>https://talonvoice.slack.com/
