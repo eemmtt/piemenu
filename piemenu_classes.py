@@ -2,11 +2,12 @@
 # courtesy of https://github.com/timo/
 #   see https://github.com/timo/talon_scripts
 # script has only been tested on Windows 10 on a single monitor
-from talon import canvas, ui, ctrl
+from talon import canvas, ui, ctrl, actions
 from talon.skia import Rect
 import math
 
-class App_Specific_Variations:
+
+class SettingsAndFunctions:
     def __init__(self):
         #Defualt Pie Menu settings and options, overridden by child classes
         self.bg_color = "3f3fffbb"
@@ -14,43 +15,63 @@ class App_Specific_Variations:
         self.line_color = "ffffffff"
         self.text_color = "ffffffff"
         self.menu_radius = 160
-        self.deadzone_radius = 60
+        self.deadzone_radius = 30
         self.text_placement_radius = 100
         
         self.options = [
-                ("The Option ZERO", self.shout), 
-                ("one", self.shout), 
-                ("two", self.shout), 
-                ("three", self.shout), 
-                ("four", self.shout), 
-                ("five", self.shout),
+                ("The Option ZERO",     self.f_shout("zero")), 
+                ("Scroll Up",           self.f_scroll(-400)), 
+                ("two",                 self.f_shout("two")), 
+                ("three",               self.f_shout("three")), 
+                ("Scroll Down",         self.f_scroll(400)), 
+                ("five",                self.f_shout("five")),
             ]
     
-    def shout(self, num: int):
-        print(f"shouting {self.options[num][0]}")
+    #base functions and function factories for the options
+    def f_shout(self, text: str):
+        def shout():
+            print(f"shouting {text}!")
+        return shout
+    
+    def f_scroll(self, num: int):
+        def scroll():
+            actions.mouse_scroll(y=num)
+        return scroll
+    
+    def f_insert(self, text: str):
+        def insert():
+            actions.insert(text)
+        return insert
+    
+    def f_key(self, key: str):
+        def keypress():
+            actions.key(key)
+        return keypress
 
-class FireFox_0(App_Specific_Variations):
+class FireFox_0(SettingsAndFunctions):
     def __init__(self):
         super().__init__()
         self.bg_color = "ff9922bb"
         
         self.options = [
-                ("New Tab", self.shout),
-                ("Close Tab", self.shout),
-                ("Back", self.shout),
-                ("Focus Search Bar", self.shout),
+                ("New Tab",             self.f_shout("def")),
+                ("Scroll Up",           self.f_scroll(-400)),
+                ("Close Tab",           self.f_shout("def")),
+                ("Back",                self.f_shout("def")),
+                ("Scroll Down",         self.f_scroll(400)),
+                ("Focus Search Bar",    self.f_shout("def")),
                 ]
 
-class FireFox_1(App_Specific_Variations):
+class FireFox_1(SettingsAndFunctions):
     def __init__(self):
         super().__init__()
         self.bg_color = "00ffffbb"
         
         self.options = [
-                ("New Tab", self.shout),
-                ("Close Tab", self.shout),
-                ("Back", self.shout),
-                ("Focus Search Bar", self.shout),
+                ("New Tab",             self.f_shout("def")),
+                ("Close Tab",           self.f_shout("def")),
+                ("Back",                self.f_shout("def")),
+                ("Focus Search Bar",    self.f_shout("def")),
                 ]
 
 # The main class for the Pie Menu
@@ -172,12 +193,12 @@ class PieMenu:
         for i in range(num_options):
             bound = -slice*(i+1)
             if angle > bound:
-                options[i][1](i) #passing the index of the option to the function, likely will remove this
+                options[i][1]() #passing the index of the option to the function, likely will remove this
                 return
-        options[num_options][1](num_options)
+        options[num_options][1]()
         return 
         
 piemenu_variations = {
-    "_default": [App_Specific_Variations()],
+    "_default": [SettingsAndFunctions()],
     "Firefox": [FireFox_0(), FireFox_1()],
 }
