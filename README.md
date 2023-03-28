@@ -14,7 +14,7 @@ PieMenu has two modes of interaction:
 2. Toggle
 
 ### Press and hold, Release  
-1. Press and hold the hotkey to display the Pie Menu at your cursor location.  
+1. Press and hold the assigned hotkey to display the Pie Menu at your cursor location.  
 2. Move your cursor outward to the 'slice' of the Pie Menu with your desired action.  
     > Slices extend outwards, beyond the drawn Pie Menu to the active screen's limits.  
 
@@ -22,17 +22,17 @@ PieMenu has two modes of interaction:
 
 ### Toggle
 1. Tap the hotkey to display the Pie Menu at your cursor location.
-2. Tap the hotkey again to trigger the action and close the Pie Menu.
+2. Tap the hotkey again to trigger the selected action and close the Pie Menu.
 
 ## Customizing Pie Menu
 Pie Menus are displayed based on the active application and the triggered Pie Menu layer.  
-A Pie Menu's appearence and actions are defined in the class SettingsAndFunctions located in piemenu_classes.py  
-Custom Pie Menus are defined in their own class inheriting from SettingsAndFunctions.
+A Pie Menu's appearence and actions are defined in the class ```SettingsAndFunctions``` in ```piemenu_classes.py```  
+Custom Pie Menus are defined in their own class inheriting from ```SettingsAndFunctions```.
 
 ### Create a Custom Pie Menu:
 
-1. Create a class for your custom pie menu in piemenu_classes.py inheriting from SettingsAndFunctions:
-```
+1. Create a class for your custom pie menu in ```piemenu_classes.py``` inheriting from ```SettingsAndFunctions```:
+```python
 class CustomPieMenu(SettingsAndFunctions):
     def __init__(self):
         super().__init__()
@@ -42,16 +42,16 @@ class CustomPieMenu(SettingsAndFunctions):
         #the options you want to appear on your Custom PieMenu
         #self.options takes an array of tuples (string, function object)
         self.options = [
-                ("New Tab",             self.f_shout("def")),
+                ("New Tab",             actions.app.tab_open),
                 ("Scroll Up",           self.f_scroll(-400)),
-                ("Close Tab",           self.f_shout("def")),
-                ("Back",                self.f_shout("def")),
+                ("Close Tab",           actions.app.tab_close),
+                ("Back",                actions.browser.go_back),
                 ("Scroll Down",         self.f_scroll(400)),
-                ("Focus Search Bar",    self.f_shout("def")),
+                ("Focus Search Bar",    actions.browser.focus_address),
                 ]
 ```
-2. Add your custom class to the dictionary 'piemenu_variations' located at the bottom of piemenu_classes.py. The key must match the result of ui.active_app().name to trigger within an active app. If you want your PieMenu to trigger when the active app is unspecified, add it to _default.
-```
+2. Add your custom class to the dictionary ```piemenu_variations``` located at the bottom of ```piemenu_classes.py```. The key must match the result of ```ui.active_app().name``` to trigger within an active app. If you want your PieMenu to trigger when the active app is unspecified, add it to ```piemenu_variations["_default"]```.
+```python
 piemenu_variations = {
     "_default": [SettingsAndFunctions()],
     "AppName": [CustomPieMenu_Layer0(), CustomPieMenu_Layer1()],
@@ -59,8 +59,8 @@ piemenu_variations = {
 ```
   
 
-3. In your .talon file, the 2nd paramenter in user.piemenu_launch and user.piemenu_toggle is the layer number. In the following example, pedal_right triggers the 0th layer in the active context, ctrl-alt-a triggers the 1st layer. 
-```
+3. In your .talon file, the 2nd paramenter in ```user.piemenu_launch``` and ```user.piemenu_toggle``` is the layer number. In the following example, ```deck(pedal_right:down)``` triggers the 0th layer in the active context, ```key(ctrl-alt-a)``` triggers the 1st layer. 
+```talon
     deck(pedal_right:down): user.piemenu_launch(1,0)
     key(ctrl-alt-a): user.piemenu_toggle(1,1)
 ```

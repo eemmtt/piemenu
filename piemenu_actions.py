@@ -3,7 +3,7 @@
 #   see https://github.com/timo/talon_scripts
 # script has only been tested on Windows 10 on a single monitor
 from talon import Module, Context
-from .piemenu_classes import *
+from .piemenu_classes import PieMenu
 
 
 mod = Module()
@@ -30,8 +30,8 @@ class PieMenuActions:
     def piemenu_toggle(screen: int, layer: int = 0):
         """Toggles Pie Menu"""
         if "user.pm_showing" in ctx.tags:
-            pm.close()
             pm.call_selection()
+            pm.close()
             ctx.tags = []
         else:
             pm.setup(screen_num=screen - 1, layer=layer)

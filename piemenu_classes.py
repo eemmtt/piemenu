@@ -4,11 +4,13 @@
 # script has only been tested on Windows 10 on a single monitor
 from talon import canvas, ui, ctrl, actions
 from talon.skia import Rect
-import math
+import math, time
 
 
 class SettingsAndFunctions:
     def __init__(self):
+        self.center = None #center of the pie menu, set by PieMenu.setup()
+        
         #Defualt Pie Menu settings and options, overridden by child classes
         self.bg_color = "3f3fffbb"
         self.deadzone_color = "999999aa"
@@ -20,11 +22,11 @@ class SettingsAndFunctions:
         
         self.options = [
                 ("The Option ZERO",     self.f_shout("zero")), 
-                ("Scroll Up",           self.f_scroll(-400)), 
+                ("Scroll Up",           self.f_scroll(-800,12,0.02)), 
                 ("two",                 self.f_shout("two")), 
                 ("three",               self.f_shout("three")), 
-                ("Scroll Down",         self.f_scroll(400)), 
-                ("five",                self.f_shout("five")),
+                ("Scroll Down",         self.f_scroll(800,12,0.03)), 
+                ("Last Window",         self.f_key("alt-tab")),
             ]
     
     #base functions and function factories for the options
@@ -33,9 +35,15 @@ class SettingsAndFunctions:
             print(f"shouting {text}!")
         return shout
     
-    def f_scroll(self, num: int):
+    def f_scroll(self, distance: int, steps: int = 1, delay: float = 0.02):
         def scroll():
-            actions.mouse_scroll(y=num)
+            if steps > 1:
+                stepped_dist = distance//steps
+                for i in range(steps):
+                    actions.mouse_scroll(y=stepped_dist)
+                    time.sleep(delay)
+            else:
+                actions.mouse_scroll(y=distance)
         return scroll
     
     def f_insert(self, text: str):
@@ -48,30 +56,32 @@ class SettingsAndFunctions:
             actions.key(key)
         return keypress
 
-class FireFox_0(SettingsAndFunctions):
+class FireFox_Nav(SettingsAndFunctions):
     def __init__(self):
         super().__init__()
         self.bg_color = "ff9922bb"
         
         self.options = [
-                ("New Tab",             self.f_shout("def")),
-                ("Scroll Up",           self.f_scroll(-400)),
-                ("Close Tab",           self.f_shout("def")),
-                ("Back",                self.f_shout("def")),
-                ("Scroll Down",         self.f_scroll(400)),
-                ("Focus Search Bar",    self.f_shout("def")),
+                ("New Tab",             actions.app.tab_open),
+                ("Scroll Up",           self.f_scroll(-1000,steps=12,delay=0.03)),
+                ("Back",                actions.browser.go_back),
+                ("Find",                self.f_key("ctrl-f")),
+                ("Scroll Down",         self.f_scroll(1000,steps=12,delay=0.03)),
+                ("Last Window",         self.f_key("alt-tab")),
                 ]
-
-class FireFox_1(SettingsAndFunctions):
+        
+class Slack_Nav(SettingsAndFunctions):
     def __init__(self):
         super().__init__()
-        self.bg_color = "00ffffbb"
+        self.bg_color = "999966bb"
         
         self.options = [
-                ("New Tab",             self.f_shout("def")),
-                ("Close Tab",           self.f_shout("def")),
-                ("Back",                self.f_shout("def")),
-                ("Focus Search Bar",    self.f_shout("def")),
+                ("Go Forward",          self.f_key("alt-right")),
+                ("Scroll Up",           self.f_scroll(-600,12)), 
+                ("Go Back",             self.f_key("alt-left")),
+                ("Search",              self.f_key("ctrl-k")),
+                ("Scroll Down",         self.f_scroll(600,12)), 
+                ("Last Window",         self.f_key("alt-tab")),
                 ]
 
 # The main class for the Pie Menu
@@ -108,8 +118,14 @@ class PieMenu:
         if self.active:
             self.mcanvas.register("draw", self.draw)
             self.mcanvas.freeze()
+            
         self.center = (mos_x, mos_y)
-        self.variations = piemenu_variations[ui.active_app().name][layer] if ui.active_app().name in piemenu_variations else piemenu_variations["_default"][layer]
+        if ui.active_app().name in piemenu_variations:
+            self.variations = piemenu_variations[ui.active_app().name][layer]
+        else:
+            self.variations = piemenu_variations["_default"][layer]
+        self.variations.center = self.center
+        
         return
         
     def show(self):
@@ -200,5 +216,6 @@ class PieMenu:
         
 piemenu_variations = {
     "_default": [SettingsAndFunctions()],
-    "Firefox": [FireFox_0(), FireFox_1()],
+    "Firefox": [FireFox_Nav()],
+    "Slack": [Slack_Nav()],
 }
