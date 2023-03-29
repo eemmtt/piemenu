@@ -20,8 +20,9 @@ PieMenu has two modes of interaction:
 2. Move your cursor outward to the 'slice' of the Pie Menu with your desired action.  
     > Slices extend outwards, beyond the drawn Pie Menu to the active screen's limits.  
 
-3. Release the hotkey to trigger the indicated action and close the Pie Menu.
-
+3. Release the same hotkey to trigger the indicated action and close the Pie Menu.
+    > Releasing the assigned hotkey while your cursor is within the innermost circle of the PieMenu ("Dead Zone") will close the Pie Menu without triggering an action.  
+    
 ### Toggle
 1. Tap the hotkey to display the Pie Menu at your cursor location.
 2. Tap the hotkey again to trigger the selected action and close the Pie Menu.

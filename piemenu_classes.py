@@ -21,10 +21,10 @@ class SettingsAndFunctions:
         self.text_placement_radius = 100
         
         self.options = [
-                ("The Option ZERO",     self.f_shout("zero")), 
+                ("Print App Name",      self.f_printAppName()), 
                 ("Scroll Up",           self.f_scroll(-800,12,0.02)), 
-                ("two",                 self.f_shout("two")), 
                 ("three",               self.f_shout("three")), 
+                ("Active Windows",      self.f_key("win-tab")), 
                 ("Scroll Down",         self.f_scroll(800,12,0.03)), 
                 ("Last Window",         self.f_key("alt-tab")),
             ]
@@ -55,6 +55,11 @@ class SettingsAndFunctions:
         def keypress():
             actions.key(key)
         return keypress
+    
+    def f_printAppName(self):
+        def printAppName():
+            print(ui.active_app().name)
+        return printAppName
 
 class FireFox_Nav(SettingsAndFunctions):
     def __init__(self):
@@ -65,7 +70,7 @@ class FireFox_Nav(SettingsAndFunctions):
                 ("New Tab",             actions.app.tab_open),
                 ("Scroll Up",           self.f_scroll(-1000,steps=12,delay=0.03)),
                 ("Back",                actions.browser.go_back),
-                ("Find",                self.f_key("ctrl-f")),
+                ("Active Windows",      self.f_key("win-tab")),
                 ("Scroll Down",         self.f_scroll(1000,steps=12,delay=0.03)),
                 ("Last Window",         self.f_key("alt-tab")),
                 ]
@@ -76,10 +81,24 @@ class Slack_Nav(SettingsAndFunctions):
         self.bg_color = "999966bb"
         
         self.options = [
-                ("Go Forward",          self.f_key("alt-right")),
+                ("Search",              self.f_key("ctrl-k")),
                 ("Scroll Up",           self.f_scroll(-600,12)), 
                 ("Go Back",             self.f_key("alt-left")),
-                ("Search",              self.f_key("ctrl-k")),
+                ("Active Windows",      self.f_key("win-tab")),
+                ("Scroll Down",         self.f_scroll(600,12)), 
+                ("Last Window",         self.f_key("alt-tab")),
+                ]
+        
+class Outlook_Nav(SettingsAndFunctions):
+    def __init__(self):
+        super().__init__()
+        self.bg_color = "886666bb"
+        
+        self.options = [
+                ("Calendar",            self.f_key("ctrl-2")),
+                ("Scroll Up",           self.f_scroll(-600,12)), 
+                ("Inbox",               self.f_key("ctrl-1")),
+                ("Active Windows",      self.f_key("win-tab")),
                 ("Scroll Down",         self.f_scroll(600,12)), 
                 ("Last Window",         self.f_key("alt-tab")),
                 ]
@@ -218,4 +237,5 @@ piemenu_variations = {
     "_default": [SettingsAndFunctions()],
     "Firefox": [FireFox_Nav()],
     "Slack": [Slack_Nav()],
+    "Microsoft Outlook": [Outlook_Nav()],
 }
