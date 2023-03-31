@@ -3,7 +3,8 @@
 #   see https://github.com/timo/talon_scripts
 # script has only been tested on Windows 10 on a single monitor
 from talon import canvas, ui, ctrl, actions
-from talon.skia import Rect
+from talon.skia import Rect, Path, Surface, Paint
+from talon.types import Point2d as Point2d
 import math, time
 
 
@@ -138,7 +139,7 @@ class PieMenu:
             self.mcanvas.register("draw", self.draw)
             self.mcanvas.freeze()
             
-        self.center = (mos_x, mos_y)
+        self.center = Point2d(mos_x, mos_y)
         if ui.active_app().name in piemenu_variations:
             self.variations = piemenu_variations[ui.active_app().name][layer]
         else:
@@ -203,7 +204,80 @@ class PieMenu:
                 canvas.paint.text_align = canvas.paint.TextAlign.CENTER
                 canvas.draw_text(o[0], c_x + t_rad*math.cos(t_angle), c_y + t_rad*math.sin(t_angle))
 
-        draw_piemenu(self.center[0], self.center[1])
+        def draw_paths(center: Point2d):
+            rad = self.variations.menu_radius
+            dead_rad = self.variations.deadzone_radius
+            length = 100
+            points = [Point2d(center.x + dead_rad, center.y), Point2d(center.x + rad, center.y), Point2d(center.x, center.y + rad), Point2d(center.x, center.y + dead_rad)]
+            colors = ["ff0000FF", "00ff00FF", "0000ffFF", "ffff00FF"]
+            path = Path()
+            last_point = points[0]
+            path.move_to(last_point.x, last_point.y)
+            canvas.paint.color = colors[1]
+            path.line_to(points[1].x, points[1].y)
+            path.arc_to_with_points(center.x, center.y, points[2].x, points[2].y, rad)
+            path.line_to(points[3].x, points[3].y)
+            path.arc_to_with_points(center.x, center.y, points[0].x, points[0].y, dead_rad)
+            path.close()
+            
+            canvas.draw_path(path, paint)
+            # path.close()
+            # canvas.draw_path(path, paint)
+        
+        def draw_wedges(self, center: Point2d):
+            explode_offset = 0
+            radius = self.variations.menu_radius
+            dead_radius = self.variations.deadzone_radius
+
+            total_values = len(self.variations.options)
+            #print(total_values)
+            center = self.center
+            
+            
+            rect = Rect( center.x - radius, center.y - radius, radius*2, radius*2)
+            rect2 = Rect( center.x - dead_radius, center.y - dead_radius, dead_radius*2, dead_radius*2)
+            
+            colors = ["ff0000FF", "00ff00FF", "0000ffFF", "ffff00FF", "ff00ffff", "00ffffff", "ff0000ff"]
+            start_angle = 0
+            
+            for i, option in enumerate(self.variations.options):
+                sweep_angle = -360.0 / total_values
+                
+                path = Path()
+                fill_paint = paint
+                outline_paint = Paint()
+
+                path.move_to(center.x, center.y)
+                path.arc_to_with_oval(oval=rect, start_angle=start_angle, sweep_angle=sweep_angle, force_move_to=False)
+                path.arc_to_with_oval(oval=rect2, start_angle=start_angle+sweep_angle, sweep_angle=-sweep_angle, force_move_to=False)
+                path.close()
+
+                fill_paint.style = fill_paint.Style.FILL
+                fill_paint.color = colors[i]
+
+                # outline_paint.style = outline_paint.Style.STROKE
+                # outline_paint.stroke_width = 5
+                # outline_paint.color = "000000ff"
+
+                # Calculate "explode" transform
+                angle = start_angle + sweep_angle / 2 
+                x = explode_offset * math.cos(math.radians(angle))
+                y = explode_offset * math.sin(math.radians(angle))
+                canvas.save()
+                canvas.translate(x, y)
+
+                # Fill and stroke the path
+                canvas.draw_path(path, fill_paint)
+                #canvas.draw_path(path, outline_paint)
+                canvas.restore()
+
+                start_angle += sweep_angle
+
+            
+                
+        draw_piemenu(self.center.x, self.center.y)
+        #draw_paths(self.center)
+        #draw_wedges(self, self.center)
    
     def call_selection(self):
         """ Calls the function associated with the selected pie menu option"""
@@ -213,12 +287,12 @@ class PieMenu:
         num_options = len(options)
         
         #check if mouse is in the deadzone, if so return with no action
-        dist_sqrd = (mos_x-self.center[0])**2 + (mos_y-self.center[1])**2
+        dist_sqrd = (mos_x-self.center.x)**2 + (mos_y-self.center.y)**2
         if dist_sqrd < dead_rad**2:
             return
         
         #get angle of vector of mouse->center, counting ccw from 3 o'clock
-        angle = math.atan2(float(mos_y-self.center[1]), float(mos_x-self.center[0]))
+        angle = math.atan2(float(mos_y-self.center.y), float(mos_x-self.center.x))
         if angle > 0:
             angle -= math.pi*2
         
