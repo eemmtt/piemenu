@@ -3,10 +3,20 @@
 #   see https://github.com/timo/talon_scripts
 # script has only been tested on Windows 10 on a single monitor
 from talon import canvas, ui, ctrl, actions
-from talon.skia import Rect
+from talon.skia import Rect, Path, Surface, Paint
+from talon.types import Point2d as Point2d
 import math, time
+from dataclasses import dataclass
 
-
+@dataclass
+class Option:
+    label: str
+    function: callable
+    size: float = 1.0
+    bg_color: str = None
+    line_color: str = None
+    text_color: str = None
+    
 class SettingsAndFunctions:
     def __init__(self):
         self.center = None #center of the pie menu, set by PieMenu.setup()
@@ -21,12 +31,19 @@ class SettingsAndFunctions:
         self.text_placement_radius = 100
         
         self.options = [
-                ("The Option ZERO",     self.f_shout("zero")), 
-                ("Scroll Up",           self.f_scroll(-800,12,0.02)), 
-                ("two",                 self.f_shout("two")), 
-                ("three",               self.f_shout("three")), 
-                ("Scroll Down",         self.f_scroll(800,12,0.03)), 
-                ("Last Window",         self.f_key("alt-tab")),
+                Option(label = "Print App Name", 
+                       function = self.f_printAppName()), 
+                Option(label = "Scroll Up",
+                       function = self.f_scroll(-800,12,0.02),
+                       bg_color="ff0000bb"), 
+                Option(label = "three",
+                       function = self.f_shout("three")), 
+                Option(label = "Active Windows",
+                       function = self.f_key("win-tab")), 
+                Option(label = "Scroll Down",
+                       function = self.f_scroll(800,12,0.03)), 
+                Option(label = "Last Window",
+                       function = self.f_key("alt-tab")),
             ]
     
     #base functions and function factories for the options
@@ -55,6 +72,11 @@ class SettingsAndFunctions:
         def keypress():
             actions.key(key)
         return keypress
+    
+    def f_printAppName(self):
+        def printAppName():
+            print(ui.active_app().name)
+        return printAppName
 
 class FireFox_Nav(SettingsAndFunctions):
     def __init__(self):
@@ -62,12 +84,12 @@ class FireFox_Nav(SettingsAndFunctions):
         self.bg_color = "ff9922bb"
         
         self.options = [
-                ("New Tab",             actions.app.tab_open),
-                ("Scroll Up",           self.f_scroll(-1000,steps=12,delay=0.03)),
-                ("Back",                actions.browser.go_back),
-                ("Find",                self.f_key("ctrl-f")),
-                ("Scroll Down",         self.f_scroll(1000,steps=12,delay=0.03)),
-                ("Last Window",         self.f_key("alt-tab")),
+                Option(label = "New Tab", function = actions.app.tab_open),
+                Option(label = "Scroll Up", function = self.f_scroll(-1000,steps=12,delay=0.03)),
+                Option(label = "Back", function = actions.browser.go_back),
+                Option(label = "Active Windows", function = self.f_key("win-tab")),
+                Option(label = "Scroll Down", function = self.f_scroll(1000,steps=12,delay=0.03)),
+                Option(label = "Last Window", function = self.f_key("alt-tab")),
                 ]
         
 class Slack_Nav(SettingsAndFunctions):
@@ -76,12 +98,26 @@ class Slack_Nav(SettingsAndFunctions):
         self.bg_color = "999966bb"
         
         self.options = [
-                ("Go Forward",          self.f_key("alt-right")),
-                ("Scroll Up",           self.f_scroll(-600,12)), 
-                ("Go Back",             self.f_key("alt-left")),
-                ("Search",              self.f_key("ctrl-k")),
-                ("Scroll Down",         self.f_scroll(600,12)), 
-                ("Last Window",         self.f_key("alt-tab")),
+                Option(label = "Search", function = self.f_key("ctrl-k")),
+                Option(label = "Scroll Up", function = self.f_scroll(-600,12)), 
+                Option(label = "Go Back", function = self.f_key("alt-left")),
+                Option(label = "Active Windows", function = self.f_key("win-tab")),
+                Option(label = "Scroll Down", function = self.f_scroll(600,12)), 
+                Option(label = "Last Window", function = self.f_key("alt-tab")),
+                ]
+        
+class Outlook_Nav(SettingsAndFunctions):
+    def __init__(self):
+        super().__init__()
+        self.bg_color = "886666bb"
+        
+        self.options = [
+                Option(label = "Calendar", function = self.f_key("ctrl-2")),
+                Option(label = "Scroll Up", function = self.f_scroll(-600,12)), 
+                Option(label = "Inbox", function = self.f_key("ctrl-1")),
+                Option(label = "Active Windows", function = self.f_key("win-tab")),
+                Option(label = "Scroll Down", function = self.f_scroll(600,12)), 
+                Option(label = "Last Window", function = self.f_key("alt-tab")),
                 ]
 
 # The main class for the Pie Menu
@@ -119,7 +155,7 @@ class PieMenu:
             self.mcanvas.register("draw", self.draw)
             self.mcanvas.freeze()
             
-        self.center = (mos_x, mos_y)
+        self.center = Point2d(mos_x, mos_y)
         if ui.active_app().name in piemenu_variations:
             self.variations = piemenu_variations[ui.active_app().name][layer]
         else:
@@ -148,43 +184,69 @@ class PieMenu:
     def draw(self, canvas):
         paint = canvas.paint
         
-        def draw_piemenu(c_x, c_y):
-            """ Draws the pie menu at the given coordinates """
-            #read attributes from the variations class
-            rad = self.variations.menu_radius
-            dead_rad = self.variations.deadzone_radius
-            t_rad = self.variations.text_placement_radius
-            options = self.variations.options
-            num_options = len(options)
-            bg_color = self.variations.bg_color
-            deadzone_color = self.variations.deadzone_color
-            line_color = self.variations.line_color
+        def draw_wedges(self, center: Point2d):
+            explode_offset = 0
+            radius = self.variations.menu_radius
+            dead_radius = self.variations.deadzone_radius
+            text_radius = self.variations.text_placement_radius
             text_color = self.variations.text_color
             
-            #draw the pie menu background
-            paint.color = bg_color
-            canvas.draw_circle(c_x, c_y, rad, paint)
+            total_values = len(self.variations.options)
+            center = self.center
             
-            paint.color = deadzone_color
-            canvas.draw_circle(c_x, c_y, dead_rad, paint)
             
-            #draw the segment lines and option labels
-            slice = (2*math.pi)  / num_options
-            for id, o in enumerate(options):
-                angle = -(slice * id)
-                t_angle = angle - slice/2
-                cos_angle = math.cos(angle)
-                sin_angle = math.sin(angle)
+            rect_out = Rect( center.x - radius, center.y - radius, radius*2, radius*2)
+            rect_in = Rect( center.x - dead_radius, center.y - dead_radius, dead_radius*2, dead_radius*2)
+            
+            start_angle = 0
+            
+            for i, option in enumerate(self.variations.options):
+                sweep_angle = -360.0 / total_values
+                text_angle = math.radians(start_angle + sweep_angle / 2)
                 
-                paint.color = line_color
-                paint.stroke_width = 1
-                canvas.draw_line(dead_rad*cos_angle + c_x, dead_rad*sin_angle + c_y, rad*cos_angle + c_x, rad*sin_angle + c_y)
-                
-                paint.color = text_color
-                canvas.paint.text_align = canvas.paint.TextAlign.CENTER
-                canvas.draw_text(o[0], c_x + t_rad*math.cos(t_angle), c_y + t_rad*math.sin(t_angle))
+                path = Path()
+                fill_paint = paint
+                outline_paint = paint.clone()
+                text_paint = Paint()
 
-        draw_piemenu(self.center[0], self.center[1])
+                # Draw Path
+                start_location = Point2d(center.x + dead_radius*math.cos(math.radians(start_angle)), center.y + dead_radius*math.sin(math.radians(start_angle)))
+                path.move_to(start_location.x, start_location.y)
+                path.arc_to_with_oval(oval=rect_out, start_angle=start_angle, sweep_angle=sweep_angle, force_move_to=False)
+                path.arc_to_with_oval(oval=rect_in, start_angle=start_angle+sweep_angle, sweep_angle=-sweep_angle, force_move_to=False)
+                path.close()
+
+                # Configure the fill paint
+                fill_paint.style = fill_paint.Style.FILL
+                fill_paint.color = option.bg_color if option.bg_color else self.variations.bg_color
+
+                # Configure the outline paint
+                outline_paint.style = outline_paint.Style.STROKE
+                outline_paint.stroke_width = 1
+                outline_paint.color = option.line_color if option.line_color else self.variations.line_color
+
+                # Calculate "explode" transform for hover anim TBD
+                angle = start_angle + sweep_angle / 2 
+                x = explode_offset * math.cos(math.radians(angle))
+                y = explode_offset * math.sin(math.radians(angle))
+                
+                canvas.save()
+                canvas.translate(x, y)
+                
+                # Fill and stroke the path
+                canvas.draw_path(path, fill_paint)
+                canvas.draw_path(path, outline_paint)
+                
+                # Draw the text
+                text_paint.color = option.text_color if option.text_color else text_color
+                text_paint.text_align = canvas.paint.TextAlign.CENTER
+                text_location = Point2d(center.x + text_radius*math.cos(text_angle), center.y + text_radius*math.sin(text_angle))
+                canvas.draw_text(option.label, text_location.x, text_location.y, text_paint)
+                
+                canvas.restore()
+                start_angle += sweep_angle
+
+        draw_wedges(self, self.center)
    
     def call_selection(self):
         """ Calls the function associated with the selected pie menu option"""
@@ -194,12 +256,12 @@ class PieMenu:
         num_options = len(options)
         
         #check if mouse is in the deadzone, if so return with no action
-        dist_sqrd = (mos_x-self.center[0])**2 + (mos_y-self.center[1])**2
+        dist_sqrd = (mos_x-self.center.x)**2 + (mos_y-self.center.y)**2
         if dist_sqrd < dead_rad**2:
             return
         
         #get angle of vector of mouse->center, counting ccw from 3 o'clock
-        angle = math.atan2(float(mos_y-self.center[1]), float(mos_x-self.center[0]))
+        angle = math.atan2(float(mos_y-self.center.y), float(mos_x-self.center.x))
         if angle > 0:
             angle -= math.pi*2
         
@@ -209,13 +271,14 @@ class PieMenu:
         for i in range(num_options):
             bound = -slice*(i+1)
             if angle > bound:
-                options[i][1]() #passing the index of the option to the function, likely will remove this
+                options[i].function() #passing the index of the option to the function, likely will remove this
                 return
-        options[num_options][1]()
+        options[num_options].function()
         return 
         
 piemenu_variations = {
     "_default": [SettingsAndFunctions()],
     "Firefox": [FireFox_Nav()],
     "Slack": [Slack_Nav()],
+    "Microsoft Outlook": [Outlook_Nav()],
 }
