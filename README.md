@@ -43,14 +43,14 @@ class CustomPieMenu(SettingsAndFunctions):
         self.bg_color = "ff00ffff" #hexadecimal RR-GG-BB-AA
         
         #the options you want to appear on your Custom PieMenu
-        #self.options takes an array of tuples (string, function object)
+        #self.options takes an array of Options, see piemenu_classes.py
         self.options = [
-                ("New Tab",             actions.app.tab_open),
-                ("Scroll Up",           self.f_scroll(-400)),
-                ("Close Tab",           actions.app.tab_close),
-                ("Back",                actions.browser.go_back),
-                ("Scroll Down",         self.f_scroll(400)),
-                ("Focus Search Bar",    actions.browser.focus_address),
+                Option(label = "New Tab",           function = actions.app.tab_open),
+                Option(label = "Scroll Up",         function = self.f_scroll(-400)),
+                Option(label = "Close Tab",         function = actions.app.tab_close),
+                Option(label = "Back",              function = actions.browser.go_back),
+                Option(label = "Scroll Down",       function = self.f_scroll(400)),
+                Option(label = "Focus Search Bar",  function = actions.browser.focus_address),
                 ]
 ```
 2. Add your custom class to the dictionary ```piemenu_variations``` located at the bottom of ```piemenu_classes.py```. The key must match the result of ```ui.active_app().name``` to trigger within an active app. If you want your PieMenu to trigger when the active app is unspecified, add it to ```piemenu_variations["_default"]```.
