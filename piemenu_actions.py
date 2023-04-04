@@ -5,7 +5,6 @@
 from talon import Module, Context
 from .piemenu_classes import PieMenu
 
-
 mod = Module()
 mod.tag("pm_showing", desc="Tag indicates whether the Pie Menu is showing")
 ctx = Context()
