@@ -16,6 +16,8 @@ class Option:
     bg_color: str = None
     line_color: str = None
     text_color: str = None
+    path: Path = None
+    center: Point2d = None
     
 class SettingsAndFunctions:
     def __init__(self):
@@ -124,65 +126,47 @@ class Outlook_Nav(SettingsAndFunctions):
 # Draws the menu, handles option selection and the resulting function call
 class PieMenu:
     def __init__(self):
-        self.screen = None
-        self.rect = None
         self.mcanvas = None
         self.active = False
         self.center = None
         self.variations = None
-
+        
     def setup(self, *, rect: Rect = None, screen_num: int = None, layer: int = 0):
-        screens = ui.screens()
-        mos_x, mos_y = ctrl.mouse_pos()
-        # each if block here might set the rect to None to indicate failure
-        if rect is not None:
-            try:
-                screen = ui.screen_containing(*rect.center)
-            except Exception:
-                rect = None
-        if rect is None and screen_num is not None:
-            screen = screens[screen_num % len(screens)]
-            rect = screen.rect
-        if rect is None:
-            screen = screens[0]
-            rect = screen.rect
-        self.screen = screen
-        self.rect = rect.copy()
-        if self.mcanvas is not None:
+        if self.mcanvas:
             self.mcanvas.close()
-        self.mcanvas = canvas.Canvas.from_screen(screen)
+            
+        mos_x, mos_y = ctrl.mouse_pos()
+        self.center = Point2d(mos_x, mos_y)
+        self.mcanvas = canvas.Canvas(x=mos_x-300, y=mos_y-300, width=600, height=600)
+        
         if self.active:
             self.mcanvas.register("draw", self.draw)
             self.mcanvas.freeze()
             
-        self.center = Point2d(mos_x, mos_y)
         if ui.active_app().name in piemenu_variations:
             self.variations = piemenu_variations[ui.active_app().name][layer]
         else:
             self.variations = piemenu_variations["_default"][layer]
-        self.variations.center = self.center
         
+        self.variations.center = self.center
         return
         
     def show(self):
-        if self.active:
-            return
-        self.mcanvas.register("draw", self.draw)
-        self.mcanvas.freeze()
-        self.active = True
+        if not self.active:
+            self.mcanvas.register("draw", self.draw)
+            self.mcanvas.freeze()
+            self.active = True
         return
 
     def close(self):
-        if not self.active:
-            return
-        self.mcanvas.unregister("draw", self.draw)
-        self.mcanvas.close()
-        self.mcanvas = None
-        self.active = False
+        if self.active:
+            self.mcanvas.unregister("draw", self.draw)
+            self.mcanvas.close()
+            self.mcanvas = None
+            self.active = False
         return
 
     def draw(self, canvas):
-        paint = canvas.paint
         
         def draw_wedges(self, center: Point2d):
             explode_offset = 0
@@ -191,31 +175,31 @@ class PieMenu:
             text_radius = self.variations.text_placement_radius
             text_color = self.variations.text_color
             
-            total_values = len(self.variations.options)
+            num_options = len(self.variations.options)
             center = self.center
-            
             
             rect_out = Rect( center.x - radius, center.y - radius, radius*2, radius*2)
             rect_in = Rect( center.x - dead_radius, center.y - dead_radius, dead_radius*2, dead_radius*2)
-            
             start_angle = 0
+            sweep_angle = -360.0 / num_options
             
-            for i, option in enumerate(self.variations.options):
-                sweep_angle = -360.0 / total_values
-                text_angle = math.radians(start_angle + sweep_angle / 2)
-                
-                path = Path()
-                fill_paint = paint
-                outline_paint = paint.clone()
-                text_paint = Paint()
-
+            def draw_path(start_angle, sweep_angle, rect_in, rect_out) -> Path:
                 # Draw Path
-                start_location = Point2d(center.x + dead_radius*math.cos(math.radians(start_angle)), center.y + dead_radius*math.sin(math.radians(start_angle)))
+                path = Path()
+                start_location = Point2d(center.x + dead_radius*math.cos(math.radians(start_angle)), 
+                                        center.y + dead_radius*math.sin(math.radians(start_angle)))
                 path.move_to(start_location.x, start_location.y)
                 path.arc_to_with_oval(oval=rect_out, start_angle=start_angle, sweep_angle=sweep_angle, force_move_to=False)
                 path.arc_to_with_oval(oval=rect_in, start_angle=start_angle+sweep_angle, sweep_angle=-sweep_angle, force_move_to=False)
                 path.close()
-
+                return path
+            
+            for option in self.variations.options:
+            
+                fill_paint = canvas.paint
+                outline_paint = fill_paint.clone()
+                text_paint = Paint()
+                    
                 # Configure the fill paint
                 fill_paint.style = fill_paint.Style.FILL
                 fill_paint.color = option.bg_color if option.bg_color else self.variations.bg_color
@@ -225,26 +209,39 @@ class PieMenu:
                 outline_paint.stroke_width = 1
                 outline_paint.color = option.line_color if option.line_color else self.variations.line_color
 
-                # Calculate "explode" transform for hover anim TBD
-                angle = start_angle + sweep_angle / 2 
-                x = explode_offset * math.cos(math.radians(angle))
-                y = explode_offset * math.sin(math.radians(angle))
-                
-                canvas.save()
-                canvas.translate(x, y)
-                
-                # Fill and stroke the path
-                canvas.draw_path(path, fill_paint)
-                canvas.draw_path(path, outline_paint)
-                
-                # Draw the text
+                # Configure text
+                text_angle = math.radians(start_angle + sweep_angle / 2)
                 text_paint.color = option.text_color if option.text_color else text_color
                 text_paint.text_align = canvas.paint.TextAlign.CENTER
-                text_location = Point2d(center.x + text_radius*math.cos(text_angle), center.y + text_radius*math.sin(text_angle))
+                text_location = Point2d(center.x + text_radius*math.cos(text_angle), 
+                                        center.y + text_radius*math.sin(text_angle))
+                
+                # Calculate "explode" transform for hover anim TBD
+                if explode_offset > 0:
+                    angle = start_angle + sweep_angle / 2 
+                    x = explode_offset * math.cos(math.radians(angle))
+                    y = explode_offset * math.sin(math.radians(angle))
+                    
+                    canvas.save()
+                    canvas.translate(x, y)
+                else:
+                    canvas.save()
+                    #canvas.translate(10, 10)
+                
+                path = draw_path(start_angle=start_angle, 
+                            sweep_angle=sweep_angle, 
+                            rect_in=rect_in, 
+                            rect_out=rect_out)
+                
+                
+                # Draw Fill, Stroke, Text
+                canvas.draw_path(path, fill_paint)
+                canvas.draw_path(path, outline_paint)
                 canvas.draw_text(option.label, text_location.x, text_location.y, text_paint)
                 
                 canvas.restore()
                 start_angle += sweep_angle
+            
 
         draw_wedges(self, self.center)
    
