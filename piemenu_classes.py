@@ -13,11 +13,13 @@ class Option:
     label: str
     function: callable
     size: float = 1.0
+    focused: bool = False
     bg_color: str = None
     line_color: str = None
     text_color: str = None
     path: Path = None
     center: Point2d = None
+    on_hover: callable = None
     
 class SettingsAndFunctions:
     def __init__(self):
@@ -25,7 +27,6 @@ class SettingsAndFunctions:
         
         #Defualt Pie Menu settings and options, overridden by child classes
         self.bg_color = "3f3fffbb"
-        self.deadzone_color = "999999aa"
         self.line_color = "ffffffff"
         self.text_color = "ffffffff"
         self.menu_radius = 160
@@ -37,7 +38,7 @@ class SettingsAndFunctions:
                        function = self.f_printAppName()), 
                 Option(label = "Scroll Up",
                        function = self.f_scroll(-800,12,0.02),
-                       bg_color="ff0000bb"), 
+                       bg_color="ff3f3fbb"), 
                 Option(label = "three",
                        function = self.f_shout("three")), 
                 Option(label = "Active Windows",
@@ -154,8 +155,10 @@ class PieMenu:
     def show(self):
         if not self.active:
             self.mcanvas.register("draw", self.draw)
-            self.mcanvas.freeze()
+            #self.mcanvas.freeze()
             self.active = True
+        else:
+            self.mcanvas.show()
         return
 
     def close(self):
@@ -167,9 +170,8 @@ class PieMenu:
         return
 
     def draw(self, canvas):
-        
         def draw_wedges(self, center: Point2d):
-            explode_offset = 0
+            explode_offset = 15
             radius = self.variations.menu_radius
             dead_radius = self.variations.deadzone_radius
             text_radius = self.variations.text_placement_radius
@@ -217,7 +219,7 @@ class PieMenu:
                                         center.y + text_radius*math.sin(text_angle))
                 
                 # Calculate "explode" transform for hover anim TBD
-                if explode_offset > 0:
+                if option.focused and explode_offset > 0:
                     angle = start_angle + sweep_angle / 2 
                     x = explode_offset * math.cos(math.radians(angle))
                     y = explode_offset * math.sin(math.radians(angle))
@@ -233,7 +235,6 @@ class PieMenu:
                             rect_in=rect_in, 
                             rect_out=rect_out)
                 
-                
                 # Draw Fill, Stroke, Text
                 canvas.draw_path(path, fill_paint)
                 canvas.draw_path(path, outline_paint)
@@ -245,33 +246,23 @@ class PieMenu:
 
         draw_wedges(self, self.center)
    
-    def call_selection(self):
-        """ Calls the function associated with the selected pie menu option"""
+    def get_option(self) -> Option:
+        """Read mouse position and return the option that the mouse is over."""
         mos_x, mos_y = ctrl.mouse_pos()
+        mouse = Point2d(mos_x, mos_y)
+        center = self.center
         options = self.variations.options
-        dead_rad = self.variations.deadzone_radius
-        num_options = len(options)
+        deadzone_radius = self.variations.deadzone_radius
         
-        #check if mouse is in the deadzone, if so return with no action
-        dist_sqrd = (mos_x-self.center.x)**2 + (mos_y-self.center.y)**2
-        if dist_sqrd < dead_rad**2:
-            return
+        #check if mouse is in deadzone
+        distance_squared = (mouse.x-center.x)**2 + (mouse.y-center.y)**2
+        if distance_squared < deadzone_radius**2:
+            return None
         
-        #get angle of vector of mouse->center, counting ccw from 3 o'clock
-        angle = math.atan2(float(mos_y-self.center.y), float(mos_x-self.center.x))
-        if angle > 0:
-            angle -= math.pi*2
-        
-        #check each slice to see which option is selected, call the associated action
-        #options index of range is 0->num_options-1
-        slice = (2*math.pi)  / num_options
-        for i in range(num_options):
-            bound = -slice*(i+1)
-            if angle > bound:
-                options[i].function() #passing the index of the option to the function, likely will remove this
-                return
-        options[num_options].function()
-        return 
+        #map angle to option
+        angle = math.atan2(float(mouse.y-center.y), float(mouse.x-center.x))
+        num_options = len(options) 
+        return options[math.ceil((-angle*num_options)/(math.pi*2)) - 1]
         
 piemenu_variations = {
     "_default": [SettingsAndFunctions()],
