@@ -21,6 +21,7 @@ def on_interval():
             last_option.focused = False
             last_option = o
             o.focused = True
+        if o.on_hover: o.function()
     if o and not last_option:
         last_option = o
         o.focused = True

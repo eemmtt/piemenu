@@ -19,7 +19,7 @@ class Option:
     text_color: str = None
     path: Path = None
     center: Point2d = None
-    on_hover: callable = None
+    on_hover: bool = False
     
 class SettingsAndFunctions:
     def __init__(self):
@@ -37,14 +37,17 @@ class SettingsAndFunctions:
                 Option(label = "Print App Name", 
                        function = self.f_printAppName()), 
                 Option(label = "Scroll Up",
-                       function = self.f_scroll(-800,12,0.02),
-                       bg_color="ff3f3fbb"), 
+                       function = self.f_scroll(distance=-30),
+                       bg_color="ff3f3fbb",
+                       on_hover=True), 
                 Option(label = "three",
                        function = self.f_shout("three")), 
                 Option(label = "Active Windows",
                        function = self.f_key("win-tab")), 
                 Option(label = "Scroll Down",
-                       function = self.f_scroll(800,12,0.03)), 
+                       function = self.f_scroll(distance=30),
+                       bg_color="1f1fffbb",
+                       on_hover=True), 
                 Option(label = "Last Window",
                        function = self.f_key("alt-tab")),
             ]
@@ -88,10 +91,16 @@ class FireFox_Nav(SettingsAndFunctions):
         
         self.options = [
                 Option(label = "New Tab", function = actions.app.tab_open),
-                Option(label = "Scroll Up", function = self.f_scroll(-1000,steps=12,delay=0.03)),
+                Option(label = "Scroll Up",
+                       function = self.f_scroll(distance=-30),
+                       bg_color="ff3f3fbb",
+                       on_hover=True),
                 Option(label = "Back", function = actions.browser.go_back),
                 Option(label = "Active Windows", function = self.f_key("win-tab")),
-                Option(label = "Scroll Down", function = self.f_scroll(1000,steps=12,delay=0.03)),
+                Option(label = "Scroll Down",
+                       function = self.f_scroll(distance=30),
+                       bg_color="1f1fffbb",
+                       on_hover=True),
                 Option(label = "Last Window", function = self.f_key("alt-tab")),
                 ]
         
@@ -102,10 +111,16 @@ class Slack_Nav(SettingsAndFunctions):
         
         self.options = [
                 Option(label = "Search", function = self.f_key("ctrl-k")),
-                Option(label = "Scroll Up", function = self.f_scroll(-600,12)), 
+                Option(label = "Scroll Up",
+                       function = self.f_scroll(distance=-10),
+                       bg_color="ff3f3fbb",
+                       on_hover=True),
                 Option(label = "Go Back", function = self.f_key("alt-left")),
                 Option(label = "Active Windows", function = self.f_key("win-tab")),
-                Option(label = "Scroll Down", function = self.f_scroll(600,12)), 
+                Option(label = "Scroll Down",
+                       function = self.f_scroll(distance=10),
+                       bg_color="1f1fffbb",
+                       on_hover=True), 
                 Option(label = "Last Window", function = self.f_key("alt-tab")),
                 ]
         
@@ -116,10 +131,16 @@ class Outlook_Nav(SettingsAndFunctions):
         
         self.options = [
                 Option(label = "Calendar", function = self.f_key("ctrl-2")),
-                Option(label = "Scroll Up", function = self.f_scroll(-600,12)), 
+                Option(label = "Scroll Up",
+                       function = self.f_scroll(distance=-30),
+                       bg_color="ff3f3fbb",
+                       on_hover=True), 
                 Option(label = "Inbox", function = self.f_key("ctrl-1")),
                 Option(label = "Active Windows", function = self.f_key("win-tab")),
-                Option(label = "Scroll Down", function = self.f_scroll(600,12)), 
+                Option(label = "Scroll Down",
+                       function = self.f_scroll(distance=30),
+                       bg_color="1f1fffbb",
+                       on_hover=True),
                 Option(label = "Last Window", function = self.f_key("alt-tab")),
                 ]
 
