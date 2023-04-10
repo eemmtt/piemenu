@@ -20,12 +20,12 @@ class Option:
     path: Path = None
     center: Point2d = None
     on_hover: bool = False
+    on_dwell: bool = False
+    dwell_time: float = 0.5
     
 class SettingsAndFunctions:
     def __init__(self):
-        self.center = None #center of the pie menu, set by PieMenu.setup()
-        
-        #Defualt Pie Menu settings and options, overridden by child classes
+        #Defualt Pie Menu display settings and options, overridden by child classes
         self.bg_color = "3f3fffbb"
         self.line_color = "ffffffff"
         self.text_color = "ffffffff"
@@ -40,8 +40,8 @@ class SettingsAndFunctions:
                        function = self.f_scroll(distance=-30),
                        bg_color="ff3f3fbb",
                        on_hover=True), 
-                Option(label = "three",
-                       function = self.f_shout("three")), 
+                Option(label = "Inserts",
+                       function = self.f_shout("Inserts")), 
                 Option(label = "Active Windows",
                        function = self.f_key("win-tab")), 
                 Option(label = "Scroll Down",
@@ -49,7 +49,8 @@ class SettingsAndFunctions:
                        bg_color="1f1fffbb",
                        on_hover=True), 
                 Option(label = "Last Window",
-                       function = self.f_key("alt-tab")),
+                       function = self.f_key("alt-tab"),
+                       on_dwell=True),
             ]
     
     #base functions and function factories for the options
@@ -83,6 +84,8 @@ class SettingsAndFunctions:
         def printAppName():
             print(ui.active_app().name)
         return printAppName
+    
+
 
 class FireFox_Nav(SettingsAndFunctions):
     def __init__(self):
@@ -90,18 +93,22 @@ class FireFox_Nav(SettingsAndFunctions):
         self.bg_color = "ff9922bb"
         
         self.options = [
-                Option(label = "New Tab", function = actions.app.tab_open),
+                Option(label = "New Tab", 
+                       function = actions.app.tab_open),
                 Option(label = "Scroll Up",
                        function = self.f_scroll(distance=-30),
                        bg_color="ff3f3fbb",
                        on_hover=True),
-                Option(label = "Back", function = actions.browser.go_back),
-                Option(label = "Active Windows", function = self.f_key("win-tab")),
+                Option(label = "Back", 
+                       function = actions.browser.go_back),
+                Option(label = "Active Windows", 
+                       function = self.f_key("win-tab")),
                 Option(label = "Scroll Down",
                        function = self.f_scroll(distance=30),
                        bg_color="1f1fffbb",
                        on_hover=True),
-                Option(label = "Last Window", function = self.f_key("alt-tab")),
+                Option(label = "Last Window", 
+                       function = self.f_key("alt-tab")),
                 ]
         
 class Slack_Nav(SettingsAndFunctions):
@@ -110,18 +117,22 @@ class Slack_Nav(SettingsAndFunctions):
         self.bg_color = "999966bb"
         
         self.options = [
-                Option(label = "Search", function = self.f_key("ctrl-k")),
+                Option(label = "Search", 
+                       function = self.f_key("ctrl-k")),
                 Option(label = "Scroll Up",
                        function = self.f_scroll(distance=-10),
                        bg_color="ff3f3fbb",
                        on_hover=True),
-                Option(label = "Go Back", function = self.f_key("alt-left")),
-                Option(label = "Active Windows", function = self.f_key("win-tab")),
+                Option(label = "Go Back", 
+                       function = self.f_key("alt-left")),
+                Option(label = "Active Windows", 
+                       function = self.f_key("win-tab")),
                 Option(label = "Scroll Down",
                        function = self.f_scroll(distance=10),
                        bg_color="1f1fffbb",
                        on_hover=True), 
-                Option(label = "Last Window", function = self.f_key("alt-tab")),
+                Option(label = "Last Window", 
+                       function = self.f_key("alt-tab")),
                 ]
         
 class Outlook_Nav(SettingsAndFunctions):
@@ -143,7 +154,20 @@ class Outlook_Nav(SettingsAndFunctions):
                        on_hover=True),
                 Option(label = "Last Window", function = self.f_key("alt-tab")),
                 ]
-
+class Inserts(SettingsAndFunctions):
+    def __init__(self):
+        super().__init__()
+        self.bg_color = "3f3f3fbb"
+        
+        self.options = [
+                Option(label = "Hello", function = self.f_insert("Hello")),
+                Option(label = "Goodbye", function = self.f_insert("Goodbye")),
+                Option(label = "Thanks", function = self.f_insert("Thanks")),
+                Option(label = "Sorry", function = self.f_insert("Sorry")),
+                Option(label = "Please", function = self.f_insert("Please")),
+                Option(label = "Thank You", function = self.f_insert("Thank You")),
+                ]
+    
 # The main class for the Pie Menu
 # Draws the menu, handles option selection and the resulting function call
 class PieMenu:
@@ -153,7 +177,7 @@ class PieMenu:
         self.center = None
         self.variations = None
         
-    def setup(self, *, rect: Rect = None, screen_num: int = None, layer: int = 0):
+    def setup(self, *, rect: Rect = None, screen_num: int = None, layer: int = 0, app: str = None):
         if self.mcanvas:
             self.mcanvas.close()
             
@@ -164,13 +188,16 @@ class PieMenu:
         if self.active:
             self.mcanvas.register("draw", self.draw)
             self.mcanvas.freeze()
-            
+        
+        #call setup by app, layer. Otherwise, call setup by active app, layer
+        if app:
+            self.variations = piemenu_variations[app][layer]
+            return
+        
         if ui.active_app().name in piemenu_variations:
             self.variations = piemenu_variations[ui.active_app().name][layer]
         else:
             self.variations = piemenu_variations["_default"][layer]
-        
-        self.variations.center = self.center
         return
         
     def show(self):
@@ -278,7 +305,7 @@ class PieMenu:
         #check if mouse is in deadzone
         distance_squared = (mouse.x-center.x)**2 + (mouse.y-center.y)**2
         if distance_squared < deadzone_radius**2:
-            return None
+            return Option(label="_none", function= lambda *args, **kwargs: None)
         
         #map angle to option
         angle = math.atan2(float(mouse.y-center.y), float(mouse.x-center.x))
@@ -286,7 +313,7 @@ class PieMenu:
         return options[math.ceil((-angle*num_options)/(math.pi*2)) - 1]
         
 piemenu_variations = {
-    "_default": [SettingsAndFunctions()],
+    "_default": [SettingsAndFunctions(), Inserts()],
     "Firefox": [FireFox_Nav()],
     "Slack": [Slack_Nav()],
     "Microsoft Outlook": [Outlook_Nav()],
