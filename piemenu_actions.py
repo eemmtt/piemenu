@@ -2,8 +2,8 @@
 # courtesy of https://github.com/timo/
 #   see https://github.com/timo/talon_scripts
 # script has only been tested on Windows 10 on a single monitor
-from talon import Module, Context, cron
-from .piemenu_classes import PieMenu, Option
+from talon import Module, Context, cron, ui
+from .piemenu_classes import PieMenu, Option, piemenu_variations
 import time
 
 mod = Module()
@@ -30,6 +30,16 @@ def on_interval():
     if option.on_dwell and time.perf_counter() - timestamp > option.dwell_time:
         PieMenuActions.piemenu_call_and_close(option)
 
+def select_pm(app: str = None, layer: int = 0) -> PieMenu:
+    global pm
+    #call setup by app, layer. Otherwise, call setup by active app, layer
+    if app:
+        return piemenu_variations[app][layer]
+    
+    if ui.active_app().name in piemenu_variations:
+        return piemenu_variations[ui.active_app().name][layer]
+    else:
+        return piemenu_variations["_default"][layer]
 
 @mod.action_class
 class PieMenuActions:     
@@ -37,7 +47,7 @@ class PieMenuActions:
         """Calls the selected function and closes the menu"""
         if not "user.pm_showing" in ctx.tags:
             return
-        global pieMenu_job, last_option
+        global pieMenu_job, last_option, pm
         cron.cancel(pieMenu_job)
         pm.close()
         ctx.tags = []
@@ -49,9 +59,9 @@ class PieMenuActions:
         
     def piemenu_launch(screen: int, layer: int = 0):
         """Launches Pie Menu"""
-        pm.setup(screen_num=screen - 1, layer=layer)
-        if not pm.mcanvas:
-            pm.setup(layer=layer)
+        global pm
+        pm = select_pm(layer=layer)
+        pm.setup()
         pm.show()
         ctx.tags = ["user.pm_showing"]
         
@@ -60,7 +70,7 @@ class PieMenuActions:
     
     def piemenu_toggle(screen: int, layer: int = 0):
         """Toggles Pie Menu"""
-        global pieMenu_job, last_option
+        global pieMenu_job, last_option, pm
         if "user.pm_showing" in ctx.tags:
             cron.cancel(pieMenu_job)
             pm.close()
@@ -71,9 +81,8 @@ class PieMenuActions:
             option.focused = False
             last_option = none_option
         else:
-            pm.setup(screen_num=screen - 1, layer=layer)
-            if not pm.mcanvas:
-                pm.setup(layer=layer)
+            pm = select_pm(layer=layer)
+            pm.setup()
             pm.show()
             
             ctx.tags = ["user.pm_showing"]
