@@ -22,17 +22,18 @@ class Option:
     on_hover: bool = False
     on_dwell: bool = False
     dwell_time: float = 0.5
-    
-# The main class for the Pie Menu
-# Draws the menu, handles option selection and the resulting function call
+
 class PieMenu:
-    def __init__(self):
+    def __init__(self,):
         self.mcanvas = None
         self.active = False
         self.center = None
         
+        self.fill = True
         self.bg_color = "3f3fffbb"
+        self.lines = True
         self.line_color = "ffffffff"
+        self.text = True
         self.text_color = "ffffffff"
         self.menu_radius = 160
         self.deadzone_radius = 30
@@ -79,7 +80,6 @@ class PieMenu:
     def show(self):
         if not self.active:
             self.mcanvas.register("draw", self.draw)
-            #self.mcanvas.freeze()
             self.active = True
         else:
             self.mcanvas.show()
@@ -107,7 +107,6 @@ class PieMenu:
             sweep_angle = -360.0 / num_options
             
             def draw_path(start_angle, sweep_angle, rect_in, rect_out) -> Path:
-                # Draw Path
                 path = Path()
                 start_location = Point2d(center.x + dead_radius*math.cos(math.radians(start_angle)), 
                                         center.y + dead_radius*math.sin(math.radians(start_angle)))
@@ -157,9 +156,9 @@ class PieMenu:
                             rect_out=self.rect_out)
                 
                 # Draw Fill, Stroke, Text
-                canvas.draw_path(path, fill_paint)
-                canvas.draw_path(path, outline_paint)
-                canvas.draw_text(option.label, text_location.x, text_location.y, text_paint)
+                if self.fill: canvas.draw_path(path, fill_paint)
+                if self.lines: canvas.draw_path(path, outline_paint)
+                if self.text: canvas.draw_text(option.label, text_location.x, text_location.y, text_paint)
                 
                 canvas.restore()
                 start_angle += sweep_angle
@@ -285,6 +284,7 @@ class Outlook_Nav(PieMenu):
                        on_hover=True),
                 Option(label = "Last Window", function = self.f_key("alt-tab")),
                 ]
+        
 class Inserts(PieMenu):
     def __init__(self):
         super().__init__()
@@ -299,9 +299,36 @@ class Inserts(PieMenu):
                 Option(label = "Thank You", function = self.f_insert("Thank You")),
                 ]
 
-piemenu_variations = {
-    "_default": [PieMenu(), Inserts()],
-    "Firefox": [FireFox_Nav()],
-    "Slack": [Slack_Nav()],
-    "Microsoft Outlook": [Outlook_Nav()],
-}
+class Manager:
+    def __init__(self, menus: dict) -> None:
+        self.menus = menus
+        self.active_menu: PieMenu = self.menus["_default"][0]
+        self.last_menu: PieMenu = self.menus["_default"][0]
+        
+    def switch_menu(self, menu_name: str, menu_layer: int = 0):
+        if menu_name in self.menus:
+            self.last_menu = self.active_menu
+            self.active_menu = self.menus[menu_name][menu_layer]
+            self.last_menu.close()
+            self.active_menu.setup()
+            self.active_menu.show()
+    
+    def set_menu(self,app: str = None, layer: int = 0) -> PieMenu:
+        self.last_menu = self.active_menu
+        self.last_menu.close()
+        
+        if app:
+            self.active_menu = self.menus[app][layer]
+        elif ui.active_app().name in self.menus:
+            self.active_menu = self.menus[ui.active_app().name][layer]
+        else:
+            self.active_menu = self.menus["_default"][layer]
+        
+        self.active_menu.setup()
+        self.active_menu.show()
+    
+    def close_menu(self):
+        self.active_menu.close()
+        
+    def get_menu_option(self) -> Option:
+        return self.active_menu.get_option()
