@@ -2,20 +2,15 @@
 # courtesy of https://github.com/timo/
 #   see https://github.com/timo/talon_scripts
 # script has only been tested on Windows 10 on a single monitor
-from talon import Module, Context, cron, ui
-from .piemenu_classes import *
+from talon import Module, Context, cron
+from .classes.piemenu import PieMenu
+from .classes.option import Option
+from .classes.menumanager import manager
 import time
 
 mod = Module()
 mod.tag("pm_showing", desc="Tag indicates whether the Pie Menu is showing")
 ctx = Context()
-piemenu_manager = Manager(menus={
-            "_default": [PieMenu(), Inserts()],
-            "Firefox": [FireFox_Nav()],
-            "Slack": [Slack_Nav()],
-            "Microsoft Outlook": [Outlook_Nav()],
-        })
-
 
 none_option = Option(label="_none", function=lambda: None)
 last_option = none_option
@@ -24,7 +19,7 @@ timestamp: float = 0
 
 def on_interval():
     global last_option, timestamp, pieMenu_job
-    option = piemenu_manager.get_menu_option()
+    option = manager.get_menu_option()
     if option.label != last_option.label:
         last_option.focused = False
         last_option = option
@@ -34,7 +29,8 @@ def on_interval():
         option.function()
         return
     if option.on_dwell and time.perf_counter() - timestamp > option.dwell_time:
-        PieMenuActions.piemenu_call_and_close(option)
+        option.function()
+        return
 
 
 
@@ -46,17 +42,17 @@ class PieMenuActions:
             return
         global pieMenu_job, last_option
         cron.cancel(pieMenu_job)
-        piemenu_manager.close_menu()
+        manager.close_menu()
         ctx.tags = []
         
-        option = piemenu_manager.get_menu_option()
+        option = manager.get_menu_option()
         option.function()
         option.focused = False
         last_option = none_option
         
     def piemenu_launch(screen: int, layer: int = 0):
         """Launches Pie Menu"""
-        piemenu_manager.set_menu(layer)
+        manager.set_menu(layer)
         ctx.tags = ["user.pm_showing"]
         
         global pieMenu_job
@@ -67,15 +63,15 @@ class PieMenuActions:
         global pieMenu_job, last_option
         if "user.pm_showing" in ctx.tags:
             cron.cancel(pieMenu_job)
-            piemenu_manager.close_menu()
+            manager.close_menu()
             ctx.tags = []
             
-            option = piemenu_manager.get_menu_option()
+            option = manager.get_menu_option()
             option.function()
             option.focused = False
             last_option = none_option
         else:
-            piemenu_manager.set_menu(layer)
+            manager.set_menu(layer)
             ctx.tags = ["user.pm_showing"]
             pieMenu_job = cron.interval("16ms", on_interval)
 

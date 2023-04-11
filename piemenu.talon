@@ -6,3 +6,5 @@ deck(pedal_right:up): user.piemenu_call_and_close()
 
 #user.piemenu_toggle(screen_number:int = 1, piemenu_layer:int = 0)
 key(f24): user.piemenu_toggle(1,0)
+key(ctrl-alt-a:down): user.piemenu_launch(1,0)
+key(ctrl-alt-a:up): user.piemenu_call_and_close()
