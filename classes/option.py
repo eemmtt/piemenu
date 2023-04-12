@@ -15,4 +15,4 @@ class Option:
     center: Point2d = None
     on_hover: bool = False
     on_dwell: bool = False
-    dwell_time: float = 0.3
+    dwell_time: float = 0.35

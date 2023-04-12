@@ -24,7 +24,8 @@ class MenuManager:
        else:
               self.menus[app] = [new_menu] 
         
-    def switch_menu(self, app_name: str, app_layer: int = 0):
+    def switch_to(self, app_name: str, app_layer: int = 0):
+       """Switch to a menu by name and layer"""
        def switch():
               if app_name in self.menus.keys():
                      self.active_menu.close()
@@ -36,28 +37,33 @@ class MenuManager:
        return switch
 
     def switch_back(self):
+       """Switch back to the last active menu"""
        def switch():
               if self.last_menu:
                      self.active_menu.close()
                      self.active_menu = self.last_menu
+                     
                      self.active_menu.setup()
                      self.active_menu.show()
+              else:
+                     self.active_menu.close()
        return switch
        
     def set_menu(self, app: str = None, layer: int = 0) -> PieMenu:
-        if self.active_menu:
+       """Set the active menu to a specific menu and display it"""
+       if self.active_menu:
               self.active_menu.close()
-        self.last_menu = self.active_menu
-        
-        if app:
-            self.active_menu = self.menus[app][layer]
-        elif ui.active_app().name in self.menus:
-            self.active_menu = self.menus[ui.active_app().name][layer]
-        else:
-            self.active_menu = self.menus["_default"][layer]
-        
-        self.active_menu.setup()
-        self.active_menu.show()
+       self.last_menu = self.active_menu
+       
+       if app:
+              self.active_menu = self.menus[app][layer]
+       elif ui.active_app().name in self.menus:
+              self.active_menu = self.menus[ui.active_app().name][layer]
+       else:
+              self.active_menu = self.menus["_default"][layer]
+       
+       self.active_menu.setup()
+       self.active_menu.show()
     
     def close_menu(self):
        if self.active_menu:
@@ -99,6 +105,13 @@ class MenuManager:
             print(ui.active_app().name)
         return printAppName
 
+    def f_macro(self, *functions):
+        def macro():
+            for function in functions:
+                function()
+        return macro
+       
+
 #------ Initialize the Menu Manager ------
 
 manager = MenuManager()
@@ -112,7 +125,7 @@ manager.create_menu(app="_default",
                                    bg_color="ff3f3fbb",
                                    on_hover=True), 
                             Option(label = "Inserts",
-                                   function = manager.switch_menu(app_name="_default",app_layer=1),
+                                   function = manager.switch_to(app_name="_default",app_layer=1),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"), 
                             Option(label = "Active Windows",
@@ -128,11 +141,15 @@ manager.create_menu(app="_default",
 
 manager.create_menu(app="_default",
                     settings={"name": "Inserts",
-                              "bg_color": "3f3f3fbb"},
-                     options=[
-                            Option(label = "Hello", function = manager.f_insert("Hello")),
-                            Option(label = "Goodbye", function = manager.f_insert("Goodbye")),
-                            Option(label = "Thanks", function = manager.f_insert("Thanks")),
+                              "bg_color": "3f3f3fbb",},
+                     options= [
+                            Option(label = "Close Ticket", 
+                                   function = manager.f_macro(
+                                          manager.f_insert("Complete"),
+                                          manager.f_key("tab"),
+                                          manager.f_insert("This ticket will now be closed!\nReply to this message at anytime to reopen the ticket."))),
+                            Option(label = "DISM & SFC", function = manager.f_insert("dism /online /cleanup-image /restorehealth & sfc /scannow\n")),
+                            Option(label = "Group Update", function = manager.f_insert("gpupdate /force\n")),
                             Option(label = "Sorry", function = manager.f_insert("Sorry")),
                             Option(label = "Please", function = manager.f_insert("Please")),
                             Option(label = "Back to Nav",
@@ -173,7 +190,7 @@ manager.create_menu(app="Firefox",
                                    bg_color="ff3f3fbb",
                                    on_hover=True),
                             Option(label = "Inserts",
-                                   function = manager.switch_menu(app_name="_default",app_layer=1),
+                                   function = manager.switch_to(app_name="_default",app_layer=1),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"),
                             Option(label = "Active Windows", 
@@ -237,7 +254,7 @@ manager.create_menu(app="Notion",
                                    bg_color="ff3f3fbb",
                                    on_hover=True), 
                             Option(label = "Inserts",
-                                   function = manager.switch_menu(app_name="_default",app_layer=1),
+                                   function = manager.switch_to(app_name="_default",app_layer=1),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"), 
                             Option(label = "Active Windows",

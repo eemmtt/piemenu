@@ -129,11 +129,9 @@ class PieMenu:
                 if self.fill: canvas.draw_path(path, fill_paint)
                 if self.lines: canvas.draw_path(path, outline_paint)
                 if self.text: canvas.draw_text(option.label, text_location.x, text_location.y, text_paint)
-                
                 canvas.restore()
                 start_angle += sweep_angle
-            
-
+        
         draw_wedges(self, self.center)
    
     def get_option(self) -> Option:

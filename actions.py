@@ -18,6 +18,7 @@ pieMenu_job = None
 timestamp: float = 0
 
 def on_interval():
+    """Called every 16ms to check for user interaction with PieMenu"""
     global last_option, timestamp, pieMenu_job
     option = manager.get_menu_option()
     if option.label != last_option.label:
@@ -29,10 +30,9 @@ def on_interval():
         option.function()
         return
     if option.on_dwell and time.perf_counter() - timestamp > option.dwell_time:
+        timestamp = time.perf_counter()
         option.function()
         return
-
-
 
 @mod.action_class
 class PieMenuActions:     
