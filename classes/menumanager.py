@@ -34,6 +34,15 @@ class MenuManager:
                      self.active_menu.setup()
                      self.active_menu.show()
        return switch
+
+    def switch_back(self):
+       def switch():
+              if self.last_menu:
+                     self.active_menu.close()
+                     self.active_menu = self.last_menu
+                     self.active_menu.setup()
+                     self.active_menu.show()
+       return switch
        
     def set_menu(self, app: str = None, layer: int = 0) -> PieMenu:
         if self.active_menu:
@@ -99,7 +108,7 @@ manager.create_menu(app="_default",
                             Option(label = "Print App Name", 
                                    function = manager.f_printAppName()), 
                             Option(label = "Scroll Up",
-                                   function = manager.f_scroll(distance=-10),
+                                   function = manager.f_scroll(distance=-30),
                                    bg_color="ff3f3fbb",
                                    on_hover=True), 
                             Option(label = "Inserts",
@@ -109,7 +118,7 @@ manager.create_menu(app="_default",
                             Option(label = "Active Windows",
                                    function = manager.f_key("win-tab")), 
                             Option(label = "Scroll Down",
-                                   function = manager.f_scroll(distance=10),
+                                   function = manager.f_scroll(distance=30),
                                    bg_color="1f1fffbb",
                                    on_hover=True), 
                             Option(label = "Last Window",
@@ -127,7 +136,7 @@ manager.create_menu(app="_default",
                             Option(label = "Sorry", function = manager.f_insert("Sorry")),
                             Option(label = "Please", function = manager.f_insert("Please")),
                             Option(label = "Back to Nav",
-                                   function = manager.switch_menu(app_name="_default",app_layer=0),
+                                   function = manager.switch_back(),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"),
                      ]
@@ -157,14 +166,16 @@ manager.create_menu(app="Microsoft Edge",
 manager.create_menu(app="Firefox",
                     settings={"name": "Firefox Navigation", "bg_color": "ff9922bb"},
                     options=[
-                            Option(label = "New Tab", 
-                                   function = actions.app.tab_open),
+                            Option(label = "Back", 
+                                   function = actions.browser.go_back),
                             Option(label = "Scroll Up",
                                    function = manager.f_scroll(distance=-30),
                                    bg_color="ff3f3fbb",
                                    on_hover=True),
-                            Option(label = "Back", 
-                                   function = actions.browser.go_back),
+                            Option(label = "Inserts",
+                                   function = manager.switch_menu(app_name="_default",app_layer=1),
+                                   on_dwell=True,
+                                   bg_color="ddaa00bb"),
                             Option(label = "Active Windows", 
                                    function = manager.f_key("win-tab")),
                             Option(label = "Scroll Down",
@@ -215,3 +226,27 @@ manager.create_menu(app="Microsoft Outlook",
                             Option(label = "Last Window", function = manager.f_key("alt-tab")),
                             ]
                             )
+
+manager.create_menu(app="Notion",
+                    settings={"name": "Notion",},
+                    options=[
+                            Option(label = "Print App Name", 
+                                   function = manager.f_printAppName()), 
+                            Option(label = "Scroll Up",
+                                   function = manager.f_scroll(distance=-10),
+                                   bg_color="ff3f3fbb",
+                                   on_hover=True), 
+                            Option(label = "Inserts",
+                                   function = manager.switch_menu(app_name="_default",app_layer=1),
+                                   on_dwell=True,
+                                   bg_color="ddaa00bb"), 
+                            Option(label = "Active Windows",
+                                   function = manager.f_key("win-tab")), 
+                            Option(label = "Scroll Down",
+                                   function = manager.f_scroll(distance=10),
+                                   bg_color="1f1fffbb",
+                                   on_hover=True), 
+                            Option(label = "Last Window",
+                                   function = manager.f_key("alt-tab"),),
+                     ]
+                     )
