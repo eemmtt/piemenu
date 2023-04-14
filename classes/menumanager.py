@@ -1,13 +1,36 @@
-from talon import ui, actions
+from talon import ui, actions, ctrl, cron
+from talon.types import Point2d
 from .piemenu import PieMenu
 from .option import Option
 import time
 
 class MenuManager:
     def __init__(self) -> None:
-        self.menus: dict = {}
-        self.active_menu: PieMenu = None
-        self.last_menu: PieMenu = None
+       self.menus: dict = {}
+       self.active_menu: PieMenu = None
+       self.last_menu: PieMenu = None
+       self.key_held: bool = False
+       
+       self.none_option = Option(label="_none", function=lambda: None)
+       self.last_option = self.none_option
+       self.pieMenu_job = None
+       self.timestamp: float = 0
+
+    def on_interval(self):
+       """Called every 16ms to check for user interaction with PieMenu"""
+       option = self.active_menu.get_option()
+       if option.label != self.last_option.label:
+              self.last_option.focused = False
+              self.last_option = option
+              option.focused = True
+              self.timestamp = time.perf_counter()
+       if option.on_hover: 
+              option.function()
+              return
+       if option.on_dwell and time.perf_counter() - self.timestamp > option.dwell_time:
+              self.timestamp = time.perf_counter()
+              option.function()
+              return
     
     def create_menu(self, app: str = "_default", options: list[Option] = [], settings: dict = {}) -> None:
        class Menu(PieMenu):
@@ -49,7 +72,7 @@ class MenuManager:
                      self.active_menu.close()
        return switch
        
-    def set_menu(self, app: str = None, layer: int = 0) -> PieMenu:
+    def launch_menu(self, app: str = None, layer: int = 0) -> PieMenu:
        """Set the active menu to a specific menu and display it"""
        if self.active_menu:
               self.active_menu.close()
@@ -64,13 +87,20 @@ class MenuManager:
        
        self.active_menu.setup()
        self.active_menu.show()
+       
+       self.pieMenu_job = cron.interval("16ms", self.on_interval)
     
     def close_menu(self):
        if self.active_menu:
               self.active_menu.close()
-        
-    def get_menu_option(self) -> Option:
-        return self.active_menu.get_option()
+       
+       cron.cancel(self.pieMenu_job)
+       
+       option = self.active_menu.get_option()
+       option.function()
+       
+       option.focused = False
+       self.last_option = self.none_option
     
     #------ option functions ------
     
@@ -79,15 +109,15 @@ class MenuManager:
             print(f"shouting {text}!")
         return shout
     
-    def f_scroll(self, distance: int, steps: int = 1, delay: float = 0.02):
+    def f_scroll(self, x: int = 0, y: int = 0, steps: int = 1, delay: float = 0.02):
         def scroll():
             if steps > 1:
-                stepped_dist = distance//steps
+                stepped_dist = Point2D(x//steps, y//steps)
                 for i in range(steps):
-                    actions.mouse_scroll(y=stepped_dist)
+                    actions.mouse_scroll(y=stepped_dist.y, x=stepped_dist.x)
                     time.sleep(delay)
             else:
-                actions.mouse_scroll(y=distance)
+                actions.mouse_scroll(y=y, x=x)
         return scroll
     
     def f_insert(self, text: str):
@@ -97,7 +127,12 @@ class MenuManager:
     
     def f_key(self, key: str):
         def keypress():
-            actions.key(key)
+            actions.key(key=key)
+        return keypress
+ 
+    def f_key_press(self, key: str, hold: int = 0):
+        def keypress():
+            ctrl.key_press(key=key, hold=hold)
         return keypress
     
     def f_printAppName(self):
@@ -110,6 +145,8 @@ class MenuManager:
             for function in functions:
                 function()
         return macro
+ 
+    
        
 
 #------ Initialize the Menu Manager ------
@@ -121,7 +158,7 @@ manager.create_menu(app="_default",
                             Option(label = "Print App Name", 
                                    function = manager.f_printAppName()), 
                             Option(label = "Scroll Up",
-                                   function = manager.f_scroll(distance=-30),
+                                   function = manager.f_scroll(y=-30),
                                    bg_color="ff3f3fbb",
                                    on_hover=True), 
                             Option(label = "Inserts",
@@ -131,7 +168,7 @@ manager.create_menu(app="_default",
                             Option(label = "Active Windows",
                                    function = manager.f_key("win-tab")), 
                             Option(label = "Scroll Down",
-                                   function = manager.f_scroll(distance=30),
+                                   function = manager.f_scroll(y=30),
                                    bg_color="1f1fffbb",
                                    on_hover=True), 
                             Option(label = "Last Window",
@@ -164,7 +201,7 @@ manager.create_menu(app="Microsoft Edge",
                     options=[
                             Option(label = "New Tab", function = actions.app.tab_open),
                             Option(label = "Scroll Up",
-                                   function = manager.f_scroll(distance=-30),
+                                   function = manager.f_scroll(y=-30),
                                    bg_color="ff3f3fbb",
                                    on_hover=True),
                             Option(label = "Back", 
@@ -172,7 +209,7 @@ manager.create_menu(app="Microsoft Edge",
                             Option(label = "Active Windows", 
                                    function = manager.f_key("win-tab")),
                             Option(label = "Scroll Down",
-                                   function = manager.f_scroll(distance=30),
+                                   function = manager.f_scroll(y=30),
                                    bg_color="1f1fffbb",
                                    on_hover=True,),
                             Option(label = "Last Window", 
@@ -186,7 +223,7 @@ manager.create_menu(app="Firefox",
                             Option(label = "Back", 
                                    function = actions.browser.go_back),
                             Option(label = "Scroll Up",
-                                   function = manager.f_scroll(distance=-30),
+                                   function = manager.f_scroll(y=-30),
                                    bg_color="ff3f3fbb",
                                    on_hover=True),
                             Option(label = "Inserts",
@@ -196,7 +233,7 @@ manager.create_menu(app="Firefox",
                             Option(label = "Active Windows", 
                                    function = manager.f_key("win-tab")),
                             Option(label = "Scroll Down",
-                                   function = manager.f_scroll(distance=30),
+                                   function = manager.f_scroll(y=30),
                                    bg_color="1f1fffbb",
                                    on_hover=True),
                             Option(label = "Last Window", 
@@ -210,7 +247,7 @@ manager.create_menu(app="Slack",
                      Option(label = "Search", 
                             function = manager.f_key("ctrl-k")),
                      Option(label = "Scroll Up",
-                            function = manager.f_scroll(distance=-10),
+                            function = manager.f_scroll(y=-10),
                             bg_color="ff3f3fbb",
                             on_hover=True),
                      Option(label = "Go Back", 
@@ -218,7 +255,7 @@ manager.create_menu(app="Slack",
                      Option(label = "Active Windows", 
                             function = manager.f_key("win-tab")),
                      Option(label = "Scroll Down",
-                            function = manager.f_scroll(distance=10),
+                            function = manager.f_scroll(y=10),
                             bg_color="1f1fffbb",
                             on_hover=True), 
                      Option(label = "Last Window", 
@@ -231,13 +268,13 @@ manager.create_menu(app="Microsoft Outlook",
                      options=[
                             Option(label = "Calendar", function = manager.f_key("ctrl-2")),
                             Option(label = "Scroll Up",
-                                   function = manager.f_scroll(distance=-30),
+                                   function = manager.f_scroll(y=-30),
                                    bg_color="ff3f3fbb",
                                    on_hover=True), 
                             Option(label = "Inbox", function = manager.f_key("ctrl-1")),
                             Option(label = "Active Windows", function = manager.f_key("win-tab")),
                             Option(label = "Scroll Down",
-                                   function = manager.f_scroll(distance=30),
+                                   function = manager.f_scroll(y=30),
                                    bg_color="1f1fffbb",
                                    on_hover=True),
                             Option(label = "Last Window", function = manager.f_key("alt-tab")),
@@ -250,7 +287,7 @@ manager.create_menu(app="Notion",
                             Option(label = "Print App Name", 
                                    function = manager.f_printAppName()), 
                             Option(label = "Scroll Up",
-                                   function = manager.f_scroll(distance=-10),
+                                   function = manager.f_scroll(y=-10),
                                    bg_color="ff3f3fbb",
                                    on_hover=True), 
                             Option(label = "Inserts",
@@ -260,7 +297,31 @@ manager.create_menu(app="Notion",
                             Option(label = "Active Windows",
                                    function = manager.f_key("win-tab")), 
                             Option(label = "Scroll Down",
-                                   function = manager.f_scroll(distance=10),
+                                   function = manager.f_scroll(y=10),
+                                   bg_color="1f1fffbb",
+                                   on_hover=True), 
+                            Option(label = "Last Window",
+                                   function = manager.f_key("alt-tab"),),
+                     ]
+                     )
+
+manager.create_menu(app="Miro",
+                    settings={"name": "Miro",},
+                    options=[
+                            Option(label = "Print App Name", 
+                                   function = manager.f_printAppName()), 
+                            Option(label = "Pan Up",
+                                   function = manager.f_shout("pan up"),
+                                   bg_color="ff3f3fbb",
+                                   on_hover=True), 
+                            Option(label = "Inserts",
+                                   function = manager.switch_to(app_name="_default",app_layer=1),
+                                   on_dwell=True,
+                                   bg_color="ddaa00bb"),
+                            Option(label = "Active Windows",
+                                   function = manager.f_key("win-tab")), 
+                            Option(label = "Pan Down",
+                                   function = manager.f_shout("pan down"),
                                    bg_color="1f1fffbb",
                                    on_hover=True), 
                             Option(label = "Last Window",
