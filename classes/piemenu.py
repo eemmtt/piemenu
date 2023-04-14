@@ -28,6 +28,7 @@ class PieMenu:
         self.rect_out: Rect = None
         self.rect_in: Rect = None
         self.explode_offset = 15
+        self.start_angle_offset = 0 # degrees
         
         self.options = []
         
@@ -73,7 +74,7 @@ class PieMenu:
             num_options = len(self.options)
             center = self.center
             
-            start_angle = 0
+            start_angle = self.start_angle_offset
             sweep_angle = -360.0 / num_options
             
             def draw_path(start_angle, sweep_angle, rect_in, rect_out) -> Path:
@@ -87,7 +88,6 @@ class PieMenu:
                 return path
             
             for option in self.options:
-            
                 fill_paint = canvas.paint
                 outline_paint = fill_paint.clone()
                 text_paint = Paint()
@@ -148,7 +148,7 @@ class PieMenu:
             return Option(label="_none", function= lambda *args, **kwargs: None)
         
         #map angle to option
+        start_angle = math.radians(self.start_angle_offset)
         angle = math.atan2(float(mouse.y-center.y), float(mouse.x-center.x))
-        num_options = len(options) 
-        return options[math.ceil((-angle*num_options)/(math.pi*2)) - 1]
+        return options[math.ceil(((start_angle-angle)*len(options))/(math.pi*2)) - 1]
     

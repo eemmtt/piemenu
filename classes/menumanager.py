@@ -15,6 +15,7 @@ class MenuManager:
        self.last_option = self.none_option
        self.pieMenu_job = None
        self.timestamp: float = 0
+       self.held_keys = []
 
     def on_interval(self):
        """Called every 16ms to check for user interaction with PieMenu"""
@@ -24,6 +25,7 @@ class MenuManager:
               self.last_option = option
               option.focused = True
               self.timestamp = time.perf_counter()
+              self.clear_held_keys()
        if option.on_hover: 
               option.function()
               return
@@ -40,6 +42,8 @@ class MenuManager:
                             if hasattr(self, key): setattr(self, key, value)
                             else: print(f"Invalid setting: {key}")
                      self.options = options
+                     if len(self.options) % 4 == 0:
+                            self.start_angle_offset = 0.5 * (360 / len(self.options))
 
        new_menu = Menu()
        if app in self.menus:
@@ -98,9 +102,18 @@ class MenuManager:
        
        option = self.active_menu.get_option()
        option.function()
+       self.clear_held_keys()
        
        option.focused = False
        self.last_option = self.none_option
+
+    def clear_held_keys(self):
+       if self.held_keys:
+              for key in self.held_keys:
+                     ctrl.key_press(key=key, down=False)
+              self.held_keys = []
+       return
+                     
     
     #------ option functions ------
     
@@ -130,10 +143,12 @@ class MenuManager:
             actions.key(key=key)
         return keypress
  
-    def f_key_press(self, key: str, hold: int = 0):
-        def keypress():
-            ctrl.key_press(key=key, hold=hold)
-        return keypress
+    def f_key_press_hold(self, key: str):
+       def keypress():
+              if key not in self.held_keys:
+                     self.held_keys.append(key)
+                     ctrl.key_press(key=key, down=True)
+       return keypress
     
     def f_printAppName(self):
         def printAppName():
@@ -310,21 +325,35 @@ manager.create_menu(app="Miro",
                     options=[
                             Option(label = "Print App Name", 
                                    function = manager.f_printAppName()), 
-                            Option(label = "Pan Up",
-                                   function = manager.f_shout("pan up"),
-                                   bg_color="ff3f3fbb",
-                                   on_hover=True), 
-                            Option(label = "Inserts",
-                                   function = manager.switch_to(app_name="_default",app_layer=1),
+                            Option(label = "Navigation",
+                                   function = manager.switch_to(app_name="Miro",app_layer=1),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"),
                             Option(label = "Active Windows",
                                    function = manager.f_key("win-tab")), 
-                            Option(label = "Pan Down",
-                                   function = manager.f_shout("pan down"),
-                                   bg_color="1f1fffbb",
-                                   on_hover=True), 
                             Option(label = "Last Window",
                                    function = manager.f_key("alt-tab"),),
+                     ]
+                     )
+
+manager.create_menu(app="Miro",
+                    settings={"name": "Miro Nav",},
+                    options=[
+                            Option(label = "Pan Right",
+                                   function = manager.f_key_press_hold("right"),
+                                   bg_color="ff3f3fbb",
+                                   on_hover=True),
+                            Option(label = "Pan Up",
+                                   function = manager.f_key_press_hold("up"),
+                                   bg_color="ff3f3fbb",
+                                   on_hover=True),
+                            Option(label = "Pan Left",
+                                   function = manager.f_key_press_hold("left"),
+                                   bg_color="ff3f3fbb",
+                                   on_hover=True),
+                            Option(label = "Pan Down",
+                                   function = manager.f_key_press_hold("down"),
+                                   bg_color="1f1fffbb",
+                                   on_hover=True),
                      ]
                      )
