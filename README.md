@@ -1,5 +1,5 @@
 # PieMenu for Talon  
-![image](https://user-images.githubusercontent.com/52972088/227623461-fd36b39d-0487-4d29-ae0a-10962a343c05.png)
+![image](https://user-images.githubusercontent.com/52972088/232621066-6bf41e05-018a-442d-ae2f-6cfa1e66142d.png)
 
 PieMenu is a contextual menu for use with a mouse.  
 At this time, PieMenu has only been tested on Windows 10 with Talon Rust, on a single monitor.  
