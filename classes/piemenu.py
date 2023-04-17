@@ -15,6 +15,7 @@ class PieMenu:
         self.active = False
         self.center = None
         
+        self.app = ""
         self.name = ""
         self.fill = True
         self.bg_color = "3f3fffbb"

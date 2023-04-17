@@ -29,14 +29,15 @@ class PieMenuActions:
         ctx.tags = []
         manager.close_menu()
         
-    def piemenu_launch(screen: int, layer: int = 0):
+    def piemenu_launch(app_name: str = None, menu_name: str = None):
         """Launches Pie Menu"""
         if "user.pm_showing" in ctx.tags:
             return
         ctx.tags = ["user.pm_showing"]
-        manager.launch_menu(layer)
+        
+        manager.launch_menu(app_name=app_name, menu_name=menu_name)
     
-    def piemenu_toggle(screen: int, layer: int = 0):
+    def piemenu_toggle(app_name: str = None, menu_name: str = None):
         """Toggles Pie Menu"""
         global pieMenu_job, last_option
         if "user.pm_showing" in ctx.tags:
@@ -44,7 +45,7 @@ class PieMenuActions:
             manager.close_menu()
         else:
             ctx.tags = ["user.pm_showing"]
-            manager.launch_menu(layer)
+            manager.launch_menu(app_name=app_name, menu_name=menu_name)
             
     def piemenu_editor_show():
         """Show Pie Menu Editor"""

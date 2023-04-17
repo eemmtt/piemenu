@@ -2,8 +2,9 @@ from talon import actions
 from ..classes.option import Option
 from ..classes.menumanager import manager
 
-manager.create_menu(app="Microsoft Edge",
-                    settings={"name": "Edge", "bg_color": "ff9922bb"},
+manager.create_menu(app_name="Microsoft Edge",
+                    menu_name="Main",
+                    settings={"bg_color": "ff9922bb"},
                     options=[
                             Option(label = "New Tab", function = actions.app.tab_open),
                             Option(label = "Scroll Up",

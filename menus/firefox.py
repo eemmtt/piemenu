@@ -2,8 +2,9 @@ from talon import actions
 from ..classes.option import Option
 from ..classes.menumanager import manager
 
-manager.create_menu(app="Firefox",
-                    settings={"name": "Firefox Navigation", "bg_color": "ff9922bb"},
+manager.create_menu(app_name="Firefox",
+                    menu_name="Main",
+                    settings={"bg_color": "ff9922bb"},
                     options=[
                             Option(label = "Back", 
                                    function = actions.browser.go_back),
@@ -12,7 +13,7 @@ manager.create_menu(app="Firefox",
                                    bg_color="ff3f3fbb",
                                    on_hover=True),
                             Option(label = "Inserts",
-                                   function = manager.switch_to(app_name="_default",app_layer=1),
+                                   function = manager.switch_to(app_name="_default",menu_name="Inserts"),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"),
                             Option(label = "Active Windows", 

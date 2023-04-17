@@ -34,31 +34,34 @@ class MenuManager:
               option.function()
               return
     
-    def create_menu(self, app: str = "_default", options: list[Option] = [], settings: dict = {}) -> None:
+    def create_menu(self, app_name: str = "_default", menu_name: str = "Main", options: list[Option] = [], settings: dict = {}) -> None:
        class Menu(PieMenu):
               def __init__(self):
                      super().__init__()
                      for key, value in settings.items():
                             if hasattr(self, key): setattr(self, key, value)
                             else: print(f"Invalid setting: {key}")
+                     self.app = app_name
+                     self.name = menu_name
                      self.options = options
                      if len(self.options) % 4 == 0:
                             self.start_angle_offset = 0.5 * (360 / len(self.options))
 
        new_menu = Menu()
-       if app in self.menus:
-            self.menus[app].append(new_menu)
+       key: tuple[str,str] = (app_name, menu_name)
+       if key in self.menus:
+            print(f"Menu '{key}' already exists, add failed.")
        else:
-              self.menus[app] = [new_menu] 
+              self.menus[key] = new_menu 
         
-    def switch_to(self, app_name: str, app_layer: int = 0):
+    def switch_to(self, app_name: str, menu_name: str):
        """Switch to a menu by name and layer"""
        def switch():
-              if app_name in self.menus.keys():
+              if (app_name, menu_name) in self.menus.keys():
                      self.active_menu.close()
                      self.last_menu = self.active_menu
 
-                     self.active_menu = self.menus[app_name][app_layer]
+                     self.active_menu = self.menus[(app_name, menu_name)]
                      self.active_menu.setup()
                      self.active_menu.show()
        return switch
@@ -76,18 +79,18 @@ class MenuManager:
                      self.active_menu.close()
        return switch
        
-    def launch_menu(self, app: str = None, layer: int = 0) -> PieMenu:
+    def launch_menu(self, app_name: str = None, menu_name:str = None, layer: int = 0) -> PieMenu:
        """Set the active menu to a specific menu and display it"""
        if self.active_menu:
               self.active_menu.close()
        self.last_menu = self.active_menu
        
-       if app:
-              self.active_menu = self.menus[app][layer]
-       elif ui.active_app().name in self.menus:
-              self.active_menu = self.menus[ui.active_app().name][layer]
+       if app_name and menu_name:
+              self.active_menu = self.menus[(app_name, menu_name)]
+       elif (ui.active_app().name, "Main") in self.menus:
+              self.active_menu = self.menus[(ui.active_app().name, "Main")]
        else:
-              self.active_menu = self.menus["_default"][layer]
+              self.active_menu = self.menus[("_default", "Main")]
        
        self.active_menu.setup()
        self.active_menu.show()

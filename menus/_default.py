@@ -1,8 +1,8 @@
 from ..classes.option import Option
 from ..classes.menumanager import manager
 
-manager.create_menu(app="_default",
-                    settings={"name": "Default",},
+manager.create_menu(app_name="_default",
+                    menu_name="Main",
                     options=[
                             Option(label = "Print App Name", 
                                    function = manager.f_printAppName()), 
@@ -11,7 +11,7 @@ manager.create_menu(app="_default",
                                    bg_color="ff3f3fbb",
                                    on_hover=True), 
                             Option(label = "Inserts",
-                                   function = manager.switch_to(app_name="_default",app_layer=1),
+                                   function = manager.switch_to(app_name="_default",menu_name="Inserts"),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"), 
                             Option(label = "Active Windows",
@@ -25,9 +25,9 @@ manager.create_menu(app="_default",
                      ]
                      )
 
-manager.create_menu(app="_default",
-                    settings={"name": "Inserts",
-                              "bg_color": "3f3f3fbb",},
+manager.create_menu(app_name="_default",
+                    menu_name="Inserts",
+                    settings= {"bg_color": "3f3f3fbb",},
                      options= [
                             Option(label = "Close Ticket", 
                                    function = manager.f_macro(

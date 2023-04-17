@@ -1,13 +1,13 @@
 from ..classes.option import Option
 from ..classes.menumanager import manager
 
-manager.create_menu(app="Miro",
-                    settings={"name": "Miro",},
+manager.create_menu(app_name="Miro",
+                    menu_name="Main",
                     options=[
                             Option(label = "Print App Name", 
                                    function = manager.f_printAppName()), 
                             Option(label = "Navigation",
-                                   function = manager.switch_to(app_name="Miro",app_layer=1),
+                                   function = manager.switch_to(app_name="Miro",menu_name="Navigation"),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"),
                             Option(label = "Active Windows",
@@ -17,8 +17,8 @@ manager.create_menu(app="Miro",
                      ]
                      )
 
-manager.create_menu(app="Miro",
-                    settings={"name": "Miro Nav",},
+manager.create_menu(app_name="Miro",
+                    menu_name="Navigation",
                     options=[
                             Option(label = "Pan Right",
                                    function = manager.f_key_press_hold("right"),

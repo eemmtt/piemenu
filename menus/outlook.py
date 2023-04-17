@@ -1,9 +1,10 @@
 from ..classes.option import Option
 from ..classes.menumanager import manager
 
-manager.create_menu(app="Microsoft Outlook",
-                     settings={"name": "Outlook", "bg_color": "886666bb"},
-                     options=[
+manager.create_menu(app_name="Microsoft Outlook",
+                    menu_name="Main",
+                    settings={"bg_color": "886666bb"},
+                    options=[
                             Option(label = "Calendar", function = manager.f_key("ctrl-2")),
                             Option(label = "Scroll Up",
                                    function = manager.f_scroll(y=-30),
