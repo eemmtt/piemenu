@@ -9,7 +9,7 @@ from .classes.menumanager import manager
 import time
 
 mod = Module()
-mod.tag("pm_showing", desc="Tag indicates whether the Pie Menu is showing")
+mod.tag("pm_showing", desc="Tag indicates whether a Pie Menu is showing")
 ctx = Context()
 
 @imgui.open(w=100, h=100)
@@ -34,7 +34,6 @@ class PieMenuActions:
         if "user.pm_showing" in ctx.tags:
             return
         ctx.tags = ["user.pm_showing"]
-        
         manager.launch_menu(app_name=app_name, menu_name=menu_name)
     
     def piemenu_toggle(app_name: str = None, menu_name: str = None):

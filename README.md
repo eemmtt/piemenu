@@ -39,17 +39,21 @@ A custom Pie Menu's settings and ```Options``` are specified when it is added to
 1. Custom Pie Menus are added to the ```MenuManager``` at the bottom of ```classes/menumanager.py```.   
 ```MenuManager.create_menu()``` takes:
     1. An app name, matching the result of ```talon.ui.active_app()```.  
-    Menus with app name ```_default``` will trigger in any app that is unspecified in the ```MenuManager```, 
-    2. A dict of ```PieMenu``` attributes to override, 
-    3. A list of ```Option``` objects.  
+    Menus with app name ```_default``` will trigger in any app that is unspecified in the ```MenuManager```,
+    2. A menu name, unique to menus within that app.  
+    The primary menu for each app should be named *"Main"*.
+    2. An optional dict of ```PieMenu``` attributes to override, 
+    3. A list of 1 or more ```Option``` objects.  
 
     ```Options``` take a minimum of a ```label``` to be displayed, and a ```function``` object to be triggered.  
     ```Options``` can also be specified to trigger ```on_hover``` and ```on_dwell```! 
 
     ```python
     manager = MenuManager()
-    manager.create_menu(app="_default",
-                        settings={"name": "Default",},
+    manager.create_menu(app_name="_default", 
+                        menu_name="Main",
+                        settings={"fill": False,
+                                  "explode_offset": 10,},
                         options=[
                             Option(label = "Print App Name", 
                                    function = manager.f_printAppName()), 
@@ -58,7 +62,7 @@ A custom Pie Menu's settings and ```Options``` are specified when it is added to
                                    bg_color="ff3f3fbb",
                                    on_hover=True), 
                             Option(label = "Inserts",
-                                   function = manager.switch_menu(app_name="_default",app_layer=1),
+                                   function = manager.switch_menu(app_name="_default",menu_name="Inserts"),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"), 
                             Option(label = "Active Windows",
@@ -74,11 +78,11 @@ A custom Pie Menu's settings and ```Options``` are specified when it is added to
     ```
   
 
-2. In ```piemenu.talon```, the 2nd paramenter in ```user.piemenu_launch``` and ```user.piemenu_toggle``` is the layer number.   
-In the following example, ```deck(pedal_right:down)``` triggers the 0th layer in the active context, ```key(f24)``` triggers the 1st layer. 
+2. In ```piemenu.talon```, ```user.piemenu_launch()``` and ```user.piemenu_toggle()``` will launch the Pie Menu with ```menu_name="Main"``` of the active application.   
+The optional arguments ```app_name``` and ```menu_name``` can be used together to trigger a specific Pie Menu. 
     ```talon
-    deck(pedal_right:down): user.piemenu_launch(1,0)
-    key(ctrl-alt-a): user.piemenu_toggle(1,1)
+    deck(pedal_right:down): user.piemenu_launch(app_name="_default", menu_name="CustomMenu")
+    key(ctrl-alt-a): user.piemenu_toggle(app_name="Firefox", menu_name="Navigation")
     ```
 
 
