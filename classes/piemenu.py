@@ -23,9 +23,9 @@ class PieMenu:
         self.line_color = "ffffffff"
         self.text = True
         self.text_color = "ffffffff"
-        self.menu_radius = 160
+        self.menu_radius = 140
         self.deadzone_radius = 30
-        self.text_placement_radius = 100
+        self.text_placement_radius = 90
         self.rect_out: Rect = None
         self.rect_in: Rect = None
         self.explode_offset = 15
@@ -39,7 +39,7 @@ class PieMenu:
             
         mos_x, mos_y = ctrl.mouse_pos()
         self.center = Point2d(mos_x, mos_y)
-        self.mcanvas = canvas.Canvas(x=mos_x-300, y=mos_y-300, width=600, height=600)
+        self.mcanvas = canvas.Canvas(x=mos_x-180, y=mos_y-180, width=360, height=360)
         
         self.rect_out = Rect( self.center.x - self.menu_radius, self.center.y - self.menu_radius, self.menu_radius*2, self.menu_radius*2)
         self.rect_in = Rect( self.center.x - self.deadzone_radius, self.center.y - self.deadzone_radius, self.deadzone_radius*2, self.deadzone_radius*2)
