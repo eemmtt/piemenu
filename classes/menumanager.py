@@ -26,10 +26,11 @@ class MenuManager:
               option.focused = True
               self.timestamp = time.perf_counter()
               self.clear_held_keys()
-       if option.on_hover: 
+       if option.on_hover and time.perf_counter() - self.timestamp > option.hover_delay:
+              self.timestamp = time.perf_counter()
               option.function()
               return
-       if option.on_dwell and time.perf_counter() - self.timestamp > option.dwell_time:
+       if option.on_dwell and time.perf_counter() - self.timestamp > option.dwell_delay:
               self.timestamp = time.perf_counter()
               option.function()
               return
@@ -50,9 +51,8 @@ class MenuManager:
        new_menu = Menu()
        key: tuple[str,str] = (app_name, menu_name)
        if key in self.menus:
-            print(f"Menu '{key}' already exists, add failed.")
-       else:
-              self.menus[key] = new_menu 
+            print(f"Warning: Menu '{key}' already exists and is being overwritten.")
+       self.menus[key] = new_menu 
         
     def switch_to(self, app_name: str, menu_name: str):
        """Switch to a menu by name and layer"""

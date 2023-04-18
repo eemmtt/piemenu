@@ -14,5 +14,6 @@ class Option:
     path: Path = None
     center: Point2d = None
     on_hover: bool = False
+    hover_delay: float = 0.005
     on_dwell: bool = False
-    dwell_time: float = 0.35
+    dwell_delay: float = 0.35
