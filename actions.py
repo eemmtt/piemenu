@@ -12,13 +12,13 @@ mod = Module()
 mod.tag("pm_showing", desc="Tag indicates whether a Pie Menu is showing")
 ctx = Context()
 
-@imgui.open(w=100, h=100)
-def gui_test(gui: imgui.GUI):
-    gui.text(f"Hello World!")
-    gui.line()
-    gui.spacer()
-    if gui.button("Close"):
-        actions.user.piemenu_editor_close()
+# @imgui.open(w=100, h=100)
+# def gui_test(gui: imgui.GUI):
+#     gui.text(f"Hello World!")
+#     gui.line()
+#     gui.spacer()
+#     if gui.button("Close"):
+#         actions.user.piemenu_editor_close()
 
 @mod.action_class
 class PieMenuActions:     
@@ -49,13 +49,13 @@ class PieMenuActions:
     def piemenu_editor_show():
         """Show Pie Menu Editor"""
         print("Showing Pie Menu Editor")
-        gui_test.show()
+        #gui_test.show()
         pass
     
     def piemenu_editor_close():
         """Close Pie Menu Editor"""
         print("Closing Pie Menu Editor")
-        gui_test.hide()
+        #gui_test.hide()
         pass
         
 
