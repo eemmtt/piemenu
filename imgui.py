@@ -1,0 +1,606 @@
+#adapted from Andreas Arvidsson's imgui.py
+#https://github.com/AndreasArvidsson/andreas-talon
+
+from talon import Module, skia, ui, settings
+from talon.skia.image import Image
+from talon.skia.path import Path
+from talon.skia.imagefilter import ImageFilter as ImageFilter
+from talon.canvas import Canvas, MouseEvent
+from talon.screen import Screen
+from talon.ui import Rect
+from typing import Callable, Optional
+from dataclasses import dataclass
+
+from .classes.option import Option
+from .classes.menumanager import manager
+
+background_color = "ffffff"
+border_color = "000000"
+text_color = "444444"
+button_bg_color = "aaaaaa"
+button_text_color = "000000"
+border_radius = 8
+button_radius = 4
+
+mod = Module()
+
+setting_max_rows = mod.setting(
+    "gui_max_rows",
+    type=int,
+    default=5,
+)
+setting_max_col = mod.setting(
+    "gui_max_cols",
+    type=int,
+    default=50,
+)
+
+test_tree = {
+    "Main": {
+        "Settings": {
+            "fill": True,
+            "bg_color": "3f3fffbb",
+            "lines": True,
+            "line_color": "ffffffff",
+            "text": True,
+            "text_color": "ffffffff",
+            "menu_radius": 140,
+            "deadzone_radius": 30,
+            "text_placement_radius": 90,
+            "explode_offset": 15,
+            "start_angle_offset": 0,
+        },
+        "Options": {
+            "Print App Name": {
+                "function": manager.f_printAppName(),
+                "settings": {},
+            },
+            "Something Else": {
+                "function": manager.f_printAppName(),
+                "settings": {},
+            }, 
+        },
+    },
+}
+
+
+class State:
+    def __init__(self, canvas: skia.Canvas, dpi: float, numbered: bool):
+        self.max_rows = setting_max_rows.get()
+        self.max_cols = setting_max_col.get()
+        self.canvas = canvas
+        self.font_size = round(dpi * settings.get("imgui.scale") / 10)
+        self.padding = self.rem(0.5)
+        self.image_height = self.max_rows * self.font_size
+        self.image_width = 5 * self.image_height
+        self.text_offset = self.rem(2.5) if numbered else self.padding
+        self.x = canvas.x + self.padding
+        self.x_text = canvas.x + self.text_offset
+        self.y = canvas.y + self.padding
+        self.width = 0
+        self.height = self.padding
+
+    def add_width(self, width: float, offset: bool):
+        text_offset = self.text_offset if offset else self.padding
+        self.width = max(self.width, text_offset + width)
+
+    def add_height(self, height: float):
+        self.y += height
+        self.height += height
+
+    def get_width(self):
+        if self.width:
+            return round(self.width + self.padding)
+        else:
+            return 0
+
+    def get_height(self):
+        return round(self.height + self.padding)
+
+    def rem(self, number: int or float):
+        return round(self.font_size * number)
+
+
+class Text:
+    def __init__(self, text: str, header: bool):
+        self.numbered = not header
+        self.text = text
+        self.header = header
+        self.rect = None
+        self._is_clicked = False
+
+    def is_clicked(self):
+        is_clicked = self._is_clicked
+        self._is_clicked = False
+        return is_clicked
+
+    def click(self):
+        self._is_clicked = True
+
+    def draw(self, state: State):
+        state.canvas.paint.style = state.canvas.paint.Style.FILL
+        state.canvas.paint.font.embolden = self.header
+        state.canvas.paint.textsize = state.font_size
+        state.canvas.paint.color = text_color
+        x = state.x if self.header else state.x_text
+        start_x = state.x
+        start_y = state.y
+        width = 0
+        height = 0
+
+        lines = self.text.split("\n")
+        if len(lines) > state.max_rows:
+            lines = lines[: state.max_rows]
+            lines[-1] = "..."
+
+        for line in lines:
+            line = line.replace("\t", "    ")
+            if len(line) > state.max_cols + 4:
+                line = line[: state.max_cols] + " ..."
+            rect = state.canvas.paint.measure_text(line)[1]
+            state.canvas.draw_text(line, x, state.y + state.font_size)
+            state.add_width(rect.x + rect.width, offset=not self.header)
+            state.add_height(state.font_size)
+            width = max(width, rect.x + rect.width)
+            height += state.font_size
+
+        self.rect = Rect(
+            start_x,
+            start_y,
+            width + x - start_x,
+            height + state.padding / 2,
+        )
+        # state.canvas.draw_rect(self.rect) TODO remove
+
+        state.add_height(state.padding)
+
+    @classmethod
+    def draw_number(cls, state: State, y_start: float, number: int):
+        state.canvas.paint.style = state.canvas.paint.Style.FILL
+        state.canvas.paint.font.embolden = False
+        state.canvas.paint.textsize = state.font_size
+        state.canvas.paint.color = button_text_color
+        text = str(number).rjust(2)
+        rect = state.canvas.paint.measure_text(text)[1]
+        x = state.x + rect.x
+        y = (state.y + y_start + rect.y + state.font_size) / 2
+
+        # state.canvas.paint.style = state.canvas.paint.Style.FILL
+        # state.canvas.paint.color = button_bg_color
+        # state.canvas.draw_rect(Rect(x, y_start, rect.x + rect.width, state.y - y_start))
+        # state.canvas.paint.color = button_text_color
+
+        state.canvas.draw_text(text, x, y)
+
+
+class Button:
+    def __init__(self, text: str):
+        self.numbered = False
+        self.text = text
+        self.rect = None
+        self._is_clicked = False
+
+    def is_clicked(self):
+        is_clicked = self._is_clicked
+        self._is_clicked = False
+        return is_clicked
+
+    def click(self):
+        self._is_clicked = True
+
+    def draw(self, state: State):
+        state.canvas.paint.textsize = state.font_size
+        text_rect = state.canvas.paint.measure_text(self.text)[1]
+        padding = state.rem(0.25)
+        width = text_rect.width + 2 * padding
+        height = state.font_size + 2 * padding
+
+        self.rect = Rect(
+            state.x + text_rect.x - padding,
+            state.y + (height + text_rect.y - text_rect.height) / 2,
+            width,
+            height,
+        )
+
+        rrect = skia.RoundRect.from_rect(self.rect, x=button_radius, y=button_radius)
+
+        state.canvas.paint.style = state.canvas.paint.Style.FILL
+        state.canvas.paint.color = button_bg_color
+        state.canvas.draw_rrect(rrect)
+
+        state.canvas.paint.style = state.canvas.paint.Style.STROKE
+        state.canvas.paint.color = border_color
+        state.canvas.draw_rrect(rrect)
+
+        state.canvas.paint.style = state.canvas.paint.Style.FILL
+        state.canvas.paint.font.embolden = False
+        state.canvas.paint.textsize = state.font_size
+        state.canvas.paint.color = button_text_color
+        state.canvas.draw_text(self.text, state.x, state.y + state.font_size)
+
+        state.add_width(width, offset=False)
+        state.add_height(height + state.padding)
+
+
+class Line:
+    def __init__(self, bold: bool):
+        self.numbered = False
+        self.bold = bold
+        self.rect = None
+
+    def draw(self, state: State):
+        y = state.y + state.padding - 1
+        state.canvas.paint.style = state.canvas.paint.Style.FILL
+        state.canvas.paint.color = text_color if self.bold else button_bg_color
+        state.canvas.draw_line(
+            state.x, y, state.x + state.canvas.width - state.font_size, y
+        )
+        state.add_height(state.font_size)
+
+
+class Spacer:
+    def __init__(self):
+        self.numbered = False
+        self.rect = None
+
+    def draw(self, state: State):
+        state.add_height(state.font_size)
+
+
+class Image:
+    def __init__(self, image: Image):
+        self.numbered = True
+        self._image = image
+        self.rect = None
+
+    def _resize(self, width: int, height: int) -> Image:
+        aspect_ratio = self._image.width / self._image.height
+        if self._image.width < self._image.height:
+            height = round(width / aspect_ratio)
+        else:
+            width = round(height * aspect_ratio)
+        return self._image.reshape(width, height)
+
+    def draw(self, state: State):
+        image = self._resize(state.image_width, state.image_height)
+        state.canvas.draw_image(image, state.x_text, state.y)
+        state.add_width(image.width, offset=True)
+        state.add_height(image.height + state.padding)
+
+class TreeNode:
+    def __init__(self, node: dict, key: str):
+        self.node = node
+        self.text = key
+        self.rect = None
+        self._is_collapsed = True
+        self._is_clicked = False
+
+    def toggle_collapse(self):
+        toggled_state = not self._is_collapsed
+        self._is_collapsed = toggled_state
+        return toggled_state
+
+    def is_clicked(self):
+        is_clicked = self._is_clicked
+        if is_clicked:
+            self.toggle_collapse()
+        self._is_clicked = False
+        return is_clicked
+
+    def click(self):
+        self._is_clicked = True
+
+    def draw(self, state: State):
+        state.canvas.paint.textsize = state.font_size
+        text_rect = state.canvas.paint.measure_text(self.text)[1]
+        padding = state.rem(0.25)
+        #width = text_rect.width + 2 * padding
+        width = state.width
+        height = state.font_size + 2 * padding
+
+        self.rect = Rect(
+            state.x + text_rect.x - padding,
+            state.y + (height + text_rect.y - text_rect.height) / 2,
+            width,
+            height,
+        )
+        
+        def draw_triangle_path(x, y, size):
+            path = Path()
+            if self._is_collapsed:
+                path.move_to(x + size/2, y)
+                path.line_to(x + size, y + size / 2)
+                path.line_to(x + size/2, y + size)
+            else:
+                path.move_to(x, y + size / 2)
+                path.line_to(x + size, y + size / 2)
+                path.line_to(x + size/2, y + size)
+            path.close()
+            return path
+
+        rrect = skia.RoundRect.from_rect(self.rect, x=button_radius, y=button_radius)
+
+        state.canvas.paint.style = state.canvas.paint.Style.FILL
+        state.canvas.paint.color = button_bg_color
+        state.canvas.draw_rrect(rrect)
+
+        state.canvas.paint.style = state.canvas.paint.Style.STROKE
+        state.canvas.paint.color = border_color
+        state.canvas.draw_rrect(rrect)
+
+        state.canvas.paint.style = state.canvas.paint.Style.FILL
+        state.canvas.paint.font.embolden = False
+        state.canvas.paint.textsize = state.font_size
+        state.canvas.paint.color = button_text_color
+        state.canvas.draw_text(self.text, state.x + state.font_size, state.y + state.font_size)
+        state.canvas.draw_path(draw_triangle_path(state.x, state.y + state.font_size/2, state.font_size/2))
+
+        state.add_width(width, offset=False)
+        state.add_height(height + state.padding)
+
+
+
+
+
+class GUI:
+    def __init__(
+        self,
+        callback: Callable,
+        screen: Screen or None,
+        x: float or None,
+        y: float or None,
+        numbered: bool,
+    ):
+        self._callback = callback
+        self._screen = screen
+        self._x = x
+        self._y = y
+        self._numbered = numbered
+        self._x_moved = None
+        self._y_moved = None
+        self._showing = False
+        self._screen_current = None
+        self._buttons: dict[str, Button] = {}
+        self._texts: dict[str, Text] = {}
+        self._treeNodes: dict[str, TreeNode] = {}
+        self._treeWidgets = []
+
+    @property
+    def showing(self):
+        return self._showing
+
+    def show(self):
+        self._screen_current = self._get_screen()
+        # Initializes at minimum size so to calculate and set correct size later
+        self._canvas = Canvas(0, 0, 1, 1)
+        self._showing = True
+        self._canvas.draggle = True
+        self._canvas.blocks_mouse = True
+        self._last_mouse_pos = None
+        self._canvas.register("draw", self._draw)
+        self._canvas.register("mouse", self._mouse)
+
+    def freeze(self):
+        self._canvas.freeze()
+
+    def hide(self):
+        if self._showing:
+            self._canvas.unregister("draw", self._draw)
+            self._canvas.unregister("mouse", self._mouse)
+            self._canvas.close()
+            self._buttons = {}
+            self._texts = {}
+            self._showing = False
+
+    def text(self, text: str) -> bool:
+        return self._text(text, header=False)
+
+    def header(self, text: str) -> bool:
+        return self._text(text, header=True)
+
+    def _text(self, text: str, header: bool) -> bool:
+        if text in self._texts:
+            element = self._texts[text]
+        else:
+            element = Text(text, header)
+            self._texts[text] = element
+        self._elements.append(element)
+        return element.is_clicked()
+
+    def button(self, text: str) -> bool:
+        if text in self._buttons:
+            element = self._buttons[text]
+        else:
+            element = Button(text)
+            self._buttons[text] = element
+        self._elements.append(element)
+        return element.is_clicked()
+
+    def line(self, bold: Optional[bool] = False):
+        self._elements.append(Line(bold))
+
+    def spacer(self):
+        self._elements.append(Spacer())
+
+    def image(self, image):
+        self._elements.append(Image(image))
+
+    def f_treeNode(self, node: dict, key: str) -> callable:
+        def _treeNode():
+            if key in self._treeNodes:
+                element = self._treeNodes[key]
+                #print("Found element")
+            else:
+                element = TreeNode(node, key)
+                self._treeNodes[key] = element
+                #print("Created element")
+            self._elements.append(element)
+            return element.is_clicked()
+        return _treeNode
+    
+    def f_text(self, text: str) -> callable:
+        def _text():
+            if text in self._texts:
+                element = self._texts[text]
+            else:
+                element = Text(text, header=False)
+                self._texts[text] = element
+            self._elements.append(element)
+            return element.is_clicked()
+        return _text
+    
+    def tree(self, node, depth:int = 0) -> bool:
+        try:
+            for e in node:
+                if isinstance(node[e], (dict)):
+                    #print(f"{'    '*depth}{e}")
+                    self.tree(node[e], depth+1)
+                    self._treeWidgets.append(self.f_treeNode(node[e], e))
+                else:
+                    print(f"{'    '*depth}{e}: {node[e]}")
+                    self._treeWidgets.append(self.f_text(f"{e}: {node[e]}"))
+        except TypeError:
+            print(f"TypeError Exception Occured in GUI.tree(): {node}")
+            pass
+    
+    def show_tree(self):
+        for widget in self._treeWidgets:
+            widget()
+        self._treeWidgets = []
+    
+    def treeNode(self, node: dict, key: str) -> bool:
+        if key in self._treeNodes:
+            element = self._treeNodes[key]
+            #print("Found element")
+        else:
+            element = TreeNode(node, key)
+            self._treeNodes[key] = element
+            #print("Created element")
+        self._elements.append(element)
+        return element.is_clicked()
+
+    def _draw(self, canvas):
+        self._elements = []
+        self._callback(self)
+        self._draw_background(canvas)
+        state = State(canvas, self._screen_current.dpi, self._numbered)
+        number = 1
+
+        if self._elements:
+            for el in self._elements:
+                y_start = state.y
+                el.draw(state)
+                if self._numbered and el.numbered:
+                    Text.draw_number(state, y_start, number)
+                    number += 1
+        else:
+            state.width = 1
+            state.height = 1
+
+        # Resize to fit content
+        if canvas.width != state.get_width() or canvas.height != state.get_height():
+            self._resize(state.get_width(), state.get_height())
+
+    def _resize(self, width: int or float, height: int or float):
+        screen = self._screen_current
+        if self._x_moved:
+            x = self._x_moved
+        elif self._x is not None:
+            x = screen.x + screen.width * self._x
+        else:
+            x = screen.x + max(0, (screen.width - width) / 2)
+        if self._y_moved:
+            y = self._y_moved
+        elif self._y is not None:
+            y = screen.y + screen.height * self._y
+        else:
+            y = screen.y + max(0, (screen.height - height) / 2)
+        if self._showing:
+            self._canvas.rect = Rect(x, y, width, height)
+
+    def _draw_background(self, canvas):
+        rrect = skia.RoundRect.from_rect(canvas.rect, x=border_radius, y=border_radius)
+
+        canvas.paint.style = canvas.paint.Style.FILL
+        canvas.paint.color = background_color
+        canvas.draw_rrect(rrect)
+
+        canvas.paint.style = canvas.paint.Style.STROKE
+        canvas.paint.color = border_color
+        canvas.draw_rrect(rrect)
+
+    def _mouse(self, e: MouseEvent):
+        if e.event == "mousedown" and e.button == 0:
+            if not self._get_element(e.gpos):
+                self._last_mouse_pos = e.gpos
+        elif e.event == "mousemove" and self._last_mouse_pos:
+            dx = e.gpos.x - self._last_mouse_pos.x
+            dy = e.gpos.y - self._last_mouse_pos.y
+            self._last_mouse_pos = e.gpos
+            self._x_moved = self._canvas.rect.x + dx
+            self._y_moved = self._canvas.rect.y + dy
+            self._canvas.move(self._x_moved, self._y_moved)
+            self._dont_center = True
+        elif e.event == "mouseup" and e.button == 0:
+            self._last_mouse_pos = None
+            element = self._get_element(e.gpos)
+            if element:
+                element.click()
+
+    def _get_element(self, pos):
+        for el in self._elements:
+            if el.rect and el.rect.contains(pos.x, pos.y):
+                print(el)
+                return el
+        return None
+
+    def _get_screen(self) -> Screen:
+        if self._screen is not None:
+            return self._screen
+        try:
+            return ui.active_window().screen
+        except:
+            return ui.main_screen()
+
+
+@dataclass
+class ImGUI:
+    GUI: GUI
+
+    @classmethod
+    def open(
+        cls,
+        screen: Optional[Screen] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        numbered: Optional[bool] = False,
+    ):
+        def open_inner(draw):
+            return GUI(
+                draw,
+                numbered=numbered,
+                screen=screen,
+                x=x,
+                y=y,
+            )
+
+        return open_inner
+
+
+imgui = ImGUI(GUI)
+
+
+@imgui.open(numbered=False, x=0.7, y=0.3)
+def gui(gui: imgui.GUI):
+    gui.header("Test Menu")
+    gui.line(bold=True)
+    gui.text("Hope you see me! In a movie! Haa!")
+    gui.spacer()
+    gui.tree(test_tree)
+    gui.show_tree()
+    gui.spacer()
+    if gui.button("Hide"):
+        gui.hide()
+
+
+gui.show()
