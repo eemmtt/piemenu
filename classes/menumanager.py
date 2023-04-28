@@ -8,14 +8,13 @@ class MenuManager:
     def __init__(self) -> None:
        self.menus: dict = {}
        self.active_menu: PieMenu = None
-       self.last_menu: PieMenu = None
-       self.key_held: bool = False
+       self.menu_stack: list[PieMenu] = []
+       self.held_keys = []
        
        self.none_option = Option(label="_none", function=lambda: None)
        self.last_option = self.none_option
        self.pieMenu_job = None
        self.timestamp: float = 0
-       self.held_keys = []
 
     def on_interval(self):
        """Called every 16ms to check for user interaction with PieMenu"""
@@ -57,33 +56,41 @@ class MenuManager:
     def switch_to(self, app_name: str, menu_name: str):
        """Switch to a menu by name and layer"""
        def switch():
-              if (app_name, menu_name) in self.menus.keys():
-                     self.active_menu.close()
-                     self.last_menu = self.active_menu
-
-                     self.active_menu = self.menus[(app_name, menu_name)]
-                     self.active_menu.setup()
-                     self.active_menu.show()
+              try:
+                     temp_menu = self.menus[(app_name, menu_name)]
+              except KeyError:
+                     print(f"Warning: Menu {(app_name, menu_name)} does not exist.")
+                     print(f"\tSwitch from ({self.active_menu.app}, {self.active_menu.name}) to ({app_name}, {menu_name}) failed.")
+                     return
+              self.active_menu.close()
+              self.menu_stack.append(self.active_menu)
+              self.active_menu = temp_menu
+              
+              self.active_menu.setup()
+              self.active_menu.show()
        return switch
 
     def switch_back(self):
        """Switch back to the last active menu"""
        def switch():
-              if self.last_menu:
+              try:
+                     temp_menu = self.menu_stack.pop()
+              except IndexError:
+                     print(f"Warning: No menu to switch back to.")
                      self.active_menu.close()
-                     self.active_menu = self.last_menu
+                     return
                      
-                     self.active_menu.setup()
-                     self.active_menu.show()
-              else:
-                     self.active_menu.close()
+              self.active_menu.close()
+              self.active_menu = temp_menu
+              self.active_menu.setup()
+              self.active_menu.show()
+                     
        return switch
        
     def launch_menu(self, app_name: str = None, menu_name:str = None, layer: int = 0) -> PieMenu:
        """Set the active menu to a specific menu and display it"""
        if self.active_menu:
               self.active_menu.close()
-       self.last_menu = self.active_menu
        
        if app_name and menu_name:
               self.active_menu = self.menus[(app_name, menu_name)]
@@ -106,6 +113,7 @@ class MenuManager:
        option = self.active_menu.get_option()
        option.function()
        self.clear_held_keys()
+       self.menu_stack = []
        
        option.focused = False
        self.last_option = self.none_option
