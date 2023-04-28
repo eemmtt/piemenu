@@ -3,9 +3,10 @@
 
 PieMenu is a contextual menu for use with a mouse.
 
-## Installation  
-Clone (download) the repo to "[Talon Home]/user"  
-[Talon Home] can be found by navigating to Scripting>"Talon Home" in Talon.
+## Installation
+```git clone``` this repo to your Talon User directory.  
+
+Your Talon User directory can be found by navigating to Scripting>"Talon Home" from the Talon Icon and then opening the "user" folder.
 
 ## Using Pie Menu
 Edit ```piemenu.talon``` to use your desired hotkey or command.  
@@ -30,7 +31,7 @@ If using a hotkey, it's recommended to use one without modifier keys (eg. ctrl, 
 ## Customizing Pie Menu
 The ```MenuManager``` class contains many Pie Menus.  
 Each Pie Menu inherits from ```PieMenu``` and contains many ```Options```, which are the slices of the pie.  
-Pie Menus are displayed based on the active application and the specified layer.
+Pie Menus are displayed based on the active application.
 A custom Pie Menu's settings and ```Options``` are specified when it is added to the ```MenuManager```.
 
 ### Create a Custom Pie Menu:
@@ -61,7 +62,10 @@ A custom Pie Menu's settings and ```Options``` are specified when it is added to
                                    bg_color="ff3f3fbb",
                                    on_hover=True), 
                             Option(label = "Inserts",
-                                   function = manager.switch_menu(app_name="_default",menu_name="Inserts"),
+                                   function = manager.switch_menu(
+                                          app_name="_default",
+                                          menu_name="Inserts"
+                                          ),
                                    on_dwell=True,
                                    bg_color="ddaa00bb"), 
                             Option(label = "Active Windows",
@@ -77,19 +81,19 @@ A custom Pie Menu's settings and ```Options``` are specified when it is added to
     ```
   
 
-2. In ```piemenu.talon```, ```user.piemenu_launch()``` and ```user.piemenu_toggle()``` will launch the Pie Menu with ```menu_name="Main"``` of the active application.   
-The optional arguments ```app_name``` and ```menu_name``` can be used together to trigger a specific Pie Menu. 
+2. In ```piemenu.talon```, ```user.piemenu("open")``` and ```user.piemenu("toggle")``` will launch the Pie Menu with ```menu_name="Main"``` of the active application.  
     ```talon
-    deck(pedal_right:down): user.piemenu_launch(app_name="_default", menu_name="CustomMenu")
-    key(ctrl-alt-a): user.piemenu_toggle(app_name="Firefox", menu_name="Navigation")
+    pie menu open: user.piemenu("open")
+    pie menu close: user.piemenu("close")
+    face("raise_eyebrows"): user.piemenu("toggle")
     ```
 
 
 ## Acknowledgement
-PieMenu was inspired by Blender's useful custom Pie Menus.  
-> https://github.com/scorpion81/blender-addons/blob/master/ui_pie_menus_official.py
+PieMenu was inspired by Blender's useful custom Pie Menus.
 
-PieMenu was originally modified from Timo's mouse_grid.py, see:  
+PieMenu was informed by AndreasArvidsson's and Timo's contributions to the Talon community:  
+>https://github.com/AndreasArvidsson/andreas-talon  
 >https://github.com/timo/talon_scripts   
 
 I ♥ Talon:  
