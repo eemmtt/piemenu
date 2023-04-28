@@ -1,5 +1,5 @@
 from talon import actions
-from ..classes.option import Option
+from ..classes.option import *
 from ..classes.menumanager import manager
 
 manager.create_menu(app_name="Firefox",
@@ -9,7 +9,7 @@ manager.create_menu(app_name="Firefox",
                             Option(label = "Back", 
                                    function = actions.browser.go_back),
                             Option(label = "Scroll Up",
-                                   function = manager.f_scroll(y=-30),
+                                   function = scroll(y=-30),
                                    bg_color="ff3f3fbb",
                                    on_hover=True),
                             Option(label = "Inserts",
@@ -17,12 +17,12 @@ manager.create_menu(app_name="Firefox",
                                    on_dwell=True,
                                    bg_color="ddaa00bb"),
                             Option(label = "Active Windows", 
-                                   function = manager.f_key("win-tab")),
+                                   function = key("win-tab")),
                             Option(label = "Scroll Down",
-                                   function = manager.f_scroll(y=30),
+                                   function = scroll(y=30),
                                    bg_color="1f1fffbb",
                                    on_hover=True),
                             Option(label = "Last Window", 
-                                   function = manager.f_key("alt-tab")),
+                                   function = key("alt-tab")),
                 ]
                 )

@@ -48,7 +48,7 @@ class MenuManager:
                             self.start_angle_offset = 0.5 * (360 / len(self.options))
 
        new_menu = Menu()
-       key: tuple[str,str] = (app_name, menu_name)
+       key = (app_name, menu_name)
        if key in self.menus:
             print(f"Warning: Menu '{key}' already exists and is being overwritten.")
        self.menus[key] = new_menu 
@@ -60,12 +60,13 @@ class MenuManager:
                      temp_menu = self.menus[(app_name, menu_name)]
               except KeyError:
                      print(f"Warning: Menu {(app_name, menu_name)} does not exist.")
-                     print(f"\tSwitch from ({self.active_menu.app}, {self.active_menu.name}) to ({app_name}, {menu_name}) failed.")
+                     print(f"\tSwitch from ({self.active_menu.app}, {self.active_menu.name}) to ({app_name}, {menu_name}) using menumanager.switch_to() failed.")
                      return
+              
               self.active_menu.close()
               self.menu_stack.append(self.active_menu)
-              self.active_menu = temp_menu
               
+              self.active_menu = temp_menu
               self.active_menu.setup()
               self.active_menu.show()
        return switch
@@ -92,12 +93,15 @@ class MenuManager:
        if self.active_menu:
               self.active_menu.close()
        
-       if app_name and menu_name:
+       app_name = app_name if app_name else "_default"
+       menu_name = menu_name if menu_name else "Main"
+       
+       try:
               self.active_menu = self.menus[(app_name, menu_name)]
-       elif (ui.active_app().name, "Main") in self.menus:
-              self.active_menu = self.menus[(ui.active_app().name, "Main")]
-       else:
-              self.active_menu = self.menus[("_default", "Main")]
+       except KeyError:
+              print(f"Warning: PieMenu {(app_name, menu_name)} does not exist.")
+              print(f"\tmenumanager.launch_menu() failed.")
+              return
        
        self.active_menu.setup()
        self.active_menu.show()
