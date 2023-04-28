@@ -27,11 +27,6 @@ class PieMenuActions:
         Opens, Closes, or Toggles a PieMenu.
         state (str): 
             Must be OPEN, CLOSE, or TOGGLE (case insensitive)
-        app_name (str, optional): 
-            Name of App who's PieMenu will be opened. 
-            Must match result of ui.active_app().name.
-        menu_name (str, optional): 
-            Name of the PieMenu to launch for this App.
         """
         #need to rethink layer system
         app_name: str = None
