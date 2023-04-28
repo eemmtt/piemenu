@@ -21,41 +21,69 @@ ctx = Context()
 #         actions.user.piemenu_editor_close()
 
 @mod.action_class
-class PieMenuActions:     
-    def piemenu_call_and_close():
-        """Calls the selected function and closes the menu"""
-        if not "user.pm_showing" in ctx.tags:
-            return
-        ctx.tags = []
-        manager.close_menu()
+class PieMenuActions:
+    def piemenu(state: str, app_name: str = None, menu_name: str = None):
+        """
+        Opens, Closes, or Toggles a PieMenu.
+        state (str): 
+            Must be OPEN, CLOSE, or TOGGLE (case insensitive)
+        app_name (str, optional): 
+            Name of App who's PieMenu will be opened. 
+            Must match result of ui.active_app().name.
+        menu_name (str, optional): 
+            Name of the PieMenu to launch for this App.
+        """
         
-    def piemenu_launch(app_name: str = None, menu_name: str = None):
-        """Launches Pie Menu"""
-        if "user.pm_showing" in ctx.tags:
-            return
-        ctx.tags = ["user.pm_showing"]
-        manager.launch_menu(app_name=app_name, menu_name=menu_name)
-    
-    def piemenu_toggle(app_name: str = None, menu_name: str = None):
-        """Toggles Pie Menu"""
-        global pieMenu_job, last_option
-        if "user.pm_showing" in ctx.tags:
+        def close(app_name: str = None, menu_name: str = None):
+            """Calls the selected function and closes the menu"""
+            if not "user.pm_showing" in ctx.tags:
+                return
             ctx.tags = []
             manager.close_menu()
-        else:
+            
+        def launch(app_name: str = None, menu_name: str = None):
+            """Launches Pie Menu"""
+            if "user.pm_showing" in ctx.tags:
+                return
             ctx.tags = ["user.pm_showing"]
             manager.launch_menu(app_name=app_name, menu_name=menu_name)
-            
-    def piemenu_editor_show():
-        """Show Pie Menu Editor"""
-        print("Showing Pie Menu Editor")
-        #gui_test.show()
-        pass
-    
-    def piemenu_editor_close():
-        """Close Pie Menu Editor"""
-        print("Closing Pie Menu Editor")
-        #gui_test.hide()
-        pass
         
+        def toggle(app_name: str = None, menu_name: str = None):
+            """Toggles Pie Menu"""
+            if "user.pm_showing" in ctx.tags:
+                ctx.tags = []
+                manager.close_menu()
+            else:
+                ctx.tags = ["user.pm_showing"]
+                manager.launch_menu(app_name=app_name, menu_name=menu_name)
+        
+        states = {
+            "OPEN": launch,
+            "CLOSE": close,
+            "TOGGLE": toggle,
+        }
+        
+        states[state.upper()](app_name=app_name, menu_name=menu_name)
+            
+    def piemenu_editor(state: str):
+        """Open or Close Pie Menu Editor"""
+    
+        def launch():
+            """Launch Pie Menu Editor"""
+            print("Launching Pie Menu Editor")
+            #gui_test.show()
+            pass
+        
+        def close():
+            """Close Pie Menu Editor"""
+            print("Closing Pie Menu Editor")
+            #gui_test.hide()
+            pass
+        
+        states = {
+            "OPEN": launch,
+            "CLOSE": close,
+        }
+        
+        states[state.upper()]()
 
