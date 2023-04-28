@@ -22,7 +22,7 @@ ctx = Context()
 
 @mod.action_class
 class PieMenuActions:
-    def piemenu(state: str, app_name: str = None, menu_name: str = None):
+    def piemenu(state: str):
         """
         Opens, Closes, or Toggles a PieMenu.
         state (str): 
@@ -33,6 +33,10 @@ class PieMenuActions:
         menu_name (str, optional): 
             Name of the PieMenu to launch for this App.
         """
+        #need to rethink layer system
+        app_name: str = None
+        menu_name: str = None
+        
         
         def close(app_name: str = None, menu_name: str = None):
             """Calls the selected function and closes the menu"""
@@ -64,6 +68,7 @@ class PieMenuActions:
         }
         
         states[state.upper()](app_name=app_name, menu_name=menu_name)
+        
             
     def piemenu_editor(state: str):
         """Open or Close Pie Menu Editor"""
