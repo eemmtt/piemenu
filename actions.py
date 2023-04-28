@@ -62,7 +62,11 @@ class PieMenuActions:
             "TOGGLE": toggle,
         }
         
-        states[state.upper()](app_name=app_name, menu_name=menu_name)
+        try:
+            states[state.upper()](app_name=app_name, menu_name=menu_name)
+        except KeyError:
+            print(f"'{state}' is not a valid state for piemenu()-")
+            print(f"\tValid states are: {list(states.keys())}")
         
             
     def piemenu_editor(state: str):
@@ -85,5 +89,9 @@ class PieMenuActions:
             "CLOSE": close,
         }
         
-        states[state.upper()]()
+        try:
+            states[state.upper()]()
+        except KeyError:
+            print(f"'{state}' is not a valid state for piemenu_editor()-")
+            print(f"\tValid states are: {list(states.keys())}")
 
