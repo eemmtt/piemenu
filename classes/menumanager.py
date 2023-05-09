@@ -93,13 +93,12 @@ class MenuManager:
        if self.active_menu:
               self.active_menu.close()
        
-       app_name = app_name if app_name else "_default"
-       menu_name = menu_name if menu_name else "Main"
+       key = (app_name, "Main") if (app_name, "Main") in self.menus.keys() else ("_default", "Main")
        
        try:
-              self.active_menu = self.menus[(app_name, menu_name)]
+              self.active_menu = self.menus[key]
        except KeyError:
-              print(f"Warning: PieMenu {(app_name, menu_name)} does not exist.")
+              print(f"Warning: PieMenu {key} does not exist.")
               print(f"\tmenumanager.launch_menu() failed.")
               return
        

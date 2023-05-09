@@ -146,7 +146,7 @@ class PieMenu:
         #check if mouse is in deadzone
         distance_squared = (mouse.x-center.x)**2 + (mouse.y-center.y)**2
         if distance_squared < deadzone_radius**2:
-            return Option(label="_none", function= lambda *args, **kwargs: None)
+            return Option(label="_none", function=lambda: None)
         
         #map angle to option
         start_angle = math.radians(self.start_angle_offset)

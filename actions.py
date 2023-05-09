@@ -2,7 +2,7 @@
 # courtesy of https://github.com/timo/
 #   see https://github.com/timo/talon_scripts
 # script has only been tested on Windows 10 on a single monitor
-from talon import Module, Context, cron, imgui, actions
+from talon import Module, Context, ui
 from .classes.piemenu import PieMenu
 from .classes.option import Option
 from .classes.menumanager import manager
@@ -45,6 +45,7 @@ class PieMenuActions:
             if "user.pm_showing" in ctx.tags:
                 return
             ctx.tags = ["user.pm_showing"]
+            app_name = ui.active_app().name
             manager.launch_menu(app_name=app_name, menu_name=menu_name)
         
         def toggle(app_name: str = None, menu_name: str = None):
