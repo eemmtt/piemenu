@@ -1,7 +1,5 @@
 #Commands used to control the PieMenu
 -
-deck(pedal_right:down): user.piemenu("open")
-deck(pedal_right:up): user.piemenu("close")
 
 #key(f24): user.piemenu("toggle")
 #key(f24): user.piemenu_editor("open")
