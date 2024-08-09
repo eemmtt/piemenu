@@ -1,4 +1,4 @@
-from talon import ui, actions, ctrl, cron
+from talon import ui, actions, ctrl, cron, clip
 from talon.types.point import Point2d
 from .piemenu import PieMenu
 from .option import Option
@@ -174,6 +174,11 @@ class MenuManager:
             for function in functions:
                 function()
         return macro
+    
+    def f_setClipboard(self, text: str):
+       def setClipboard():
+              clip.set_text(text)
+       return setClipboard
  
     
        
